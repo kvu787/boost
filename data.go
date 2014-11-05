@@ -3,6 +3,7 @@ package main
 import (
 	"container/list"
 
+	. "bitbucket.org/kvu787/boost/lib/angle"
 	"bitbucket.org/kvu787/boost/lib/palette"
 	. "bitbucket.org/kvu787/boost/lib/vector"
 
@@ -10,9 +11,10 @@ import (
 )
 
 var (
-	WINDOW       *sf.RenderWindow
-	INPUT        *input_s   = &input_s{false, nil}
-	GAME_OBJECTS *list.List = list.New()
+	WINDOW         *sf.RenderWindow = nil
+	INPUT          *input_s         = &input_s{false, nil}
+	GAME_OBJECTS   *list.List       = list.New()
+	ASTEROID_COUNT uint             = 3
 )
 
 func init() {
@@ -23,11 +25,14 @@ func init() {
 			circle_s{5, 0, 0, palette.BLUE, palette.WHITE},
 		},
 		&asteroid_s{
-			transform_s{NewCartesian(50, -60), NewCartesian(-5, 5), NewZeroVector()},
-			circle_s{20, 1.5, 0, palette.GRAY, palette.WHITE},
-		}, &asteroid_s{
-			transform_s{NewCartesian(-60, 20), NewZeroVector(), NewZeroVector()},
-			circle_s{20, 2, 0, palette.GRAY, palette.WHITE},
+			transform_s{NewCartesian(50, -50), NewPolar(50, NewDegrees(-20)), NewZeroVector()},
+			circle_s{20, 0, 0, palette.LIGHT_GRAY, palette.WHITE},
+			false,
+		},
+		&asteroid_s{
+			transform_s{NewCartesian(0, -100), NewPolar(70, NewDegrees(160)), NewZeroVector()},
+			circle_s{20, 0, 0, palette.GRAY, palette.WHITE},
+			false,
 		},
 	)
 }

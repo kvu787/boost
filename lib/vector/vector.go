@@ -12,6 +12,7 @@ import (
 type Vector interface {
 	Dot(other Vector) float64
 	Projection(other Vector) Vector
+	Rejection(other Vector) Vector
 	GetX() float64
 	GetY() float64
 	Add(other Vector) Vector
@@ -45,7 +46,11 @@ func NewPolar(magnitude float64, angle Angle) Vector {
 }
 
 func (v vectorStruct) Projection(other Vector) Vector {
-	return v.Mul(v.Dot(other) / math.Pow(v.GetMagnitude(), 2))
+	return other.Mul(v.Dot(other) / math.Pow(other.GetMagnitude(), 2))
+}
+
+func (v vectorStruct) Rejection(other Vector) Vector {
+	return v.Sub(v.Projection(other))
 }
 
 func (v vectorStruct) Dot(other Vector) float64 {

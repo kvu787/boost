@@ -10,6 +10,7 @@ var (
 	BLUE       sf.Color = sf.Color{61, 87, 122, 255}
 	YELLOW     sf.Color = sf.ColorYellow()
 	GRAY       sf.Color = sf.Color{59, 60, 54, 255}
+	LIGHT_GRAY sf.Color = sf.Color{160, 160, 160, 255}
 	WHITE      sf.Color = sf.ColorWhite()
 	DARK_GREEN sf.Color = sf.Color{25, 112, 8, 255}
 	LASER_BLUE sf.Color = sf.Color{12, 231, 242, 255}

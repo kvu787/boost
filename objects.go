@@ -28,8 +28,9 @@ type player_s struct {
 func (p player_s) Tag() int { return PlayerTag }
 
 type asteroid_s struct {
-	transform transform_s
-	circle_s  circle_s
+	transform    transform_s
+	circle_s     circle_s
+	shouldRemove bool
 }
 
 func (a asteroid_s) Tag() int { return AsteroidTag }
