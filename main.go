@@ -44,8 +44,7 @@ func input(window *sf.RenderWindow) {
 }
 
 func main() {
-	// game variables
-	camera := NewZeroVector()
+	// timing variables
 	startTime := time.Now()
 	secondsPerFrame := time.Duration(int64(time.Second) / int64(FPS))
 
@@ -69,6 +68,12 @@ func main() {
 			return x.Sub(frame)
 		}
 
+		// get camera
+		var camera *camera_s = listWhere(GAME_OBJECTS, func(i interface{}) bool {
+			_, ok := i.(*camera_s)
+			return ok
+		}).(*camera_s)
+
 		// select player from list
 		player := listWhere(GAME_OBJECTS, func(i interface{}) bool {
 			_, ok := i.(*player_s)
@@ -85,7 +90,6 @@ func main() {
 
 		// update player transform
 		player.transform = player.transform.applyAcceleration(secondsPerFrame.Seconds())
-		fmt.Println(player.transform.position)
 
 		// update asteroid transforms
 		var asteroidsList *list.List = listSelect(GAME_OBJECTS, func(i interface{}) bool {
@@ -98,7 +102,7 @@ func main() {
 		}
 
 		// update camera
-		camera = player.transform.position
+		camera.Vector = player.transform.position
 
 		// render
 		window.Clear(palette.BLACK)

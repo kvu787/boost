@@ -13,6 +13,7 @@ var (
 
 func init() {
 	pushFrontAll(GAME_OBJECTS,
+		&camera_s{NewZeroVector()},
 		&player_s{
 			transform_s{NewZeroVector(), NewZeroVector(), NewZeroVector()},
 			circle_s{10, 0, 0, palette.BLUE, palette.WHITE},

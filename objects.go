@@ -6,6 +6,8 @@ import (
 	sf "bitbucket.org/kvu787/gosfml2"
 )
 
+type camera_s struct{ Vector }
+
 type input_s struct {
 	isMousePressed bool
 	mousePosition  Vector
