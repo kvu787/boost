@@ -43,88 +43,83 @@ func input(window *sf.RenderWindow) {
 	INPUT.mousePosition = NewCartesian(float64(position.X), float64(position.Y))
 }
 
+func update(window *sf.RenderWindow, secondsPerFrame float64) {
+	var camera *camera_s = listWhere(GAME_OBJECTS, CameraTag).(*camera_s)
+	var player *player_s = listWhere(GAME_OBJECTS, PlayerTag).(*player_s)
+	var asteroidsList *list.List = listSelect(GAME_OBJECTS, AsteroidTag)
+
+	// if mouse held, apply acceleration to player
+	if INPUT.isMousePressed {
+		playerFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, player.transform.position)
+		player.transform.acceleration = playerFramePosition.Sub(INPUT.mousePosition)
+	} else {
+		player.transform.acceleration = NewZeroVector()
+	}
+
+	// update player transform
+	player.transform = player.transform.applyAcceleration(secondsPerFrame)
+
+	for e := asteroidsList.Front(); e != nil; e = e.Next() {
+		asteroid := e.Value.(*asteroid_s)
+		asteroid.transform = asteroid.transform.applyAcceleration(secondsPerFrame)
+	}
+
+	// update camera
+	camera.Vector = player.transform.position
+}
+
+func render(window *sf.RenderWindow) {
+	var camera *camera_s = listWhere(GAME_OBJECTS, CameraTag).(*camera_s)
+	var player *player_s = listWhere(GAME_OBJECTS, PlayerTag).(*player_s)
+	var asteroidsList *list.List = listSelect(GAME_OBJECTS, AsteroidTag)
+
+	// render
+	window.Clear(palette.BLACK)
+
+	// render player
+	playerDrawer := player.circle.GetDrawer()
+	playerFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, player.transform.position).ToSFMLVector2f()
+	playerDrawer.SetPosition(playerFramePosition)
+	window.Draw(playerDrawer, sf.DefaultRenderStates())
+
+	// render asteroids
+	for e := asteroidsList.Front(); e != nil; e = e.Next() {
+		asteroid := e.Value.(*asteroid_s)
+		asteroidDrawer := asteroid.circle_s.GetDrawer()
+		asteroidFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, asteroid.transform.position).ToSFMLVector2f()
+		asteroidDrawer.SetPosition(asteroidFramePosition)
+		window.Draw(asteroidDrawer, sf.DefaultRenderStates())
+	}
+
+	window.Display()
+}
+
 func main() {
 	// timing variables
 	startTime := time.Now()
-	secondsPerFrame := time.Duration(int64(time.Second) / int64(FPS))
+	durationPerFrame := time.Duration(int64(time.Second) / int64(FPS))
 
 	// setup
 	fmt.Println("Setting up window...")
 	window := setup()
 
-	fmt.Println("Entering game loop...")
-
 	// main loop
+	fmt.Println("Entering game loop...")
 	for window.IsOpen() {
 
 		// vsync
 		startTime = time.Now()
 
-		// update global INPUT
-		input(window)
-
-		getFramePosition := func(winx, winy uint, camera, x Vector) Vector {
-			frame := camera.Add(NewCartesian(-0.5*float64(winx), -0.5*float64(winy)))
-			return x.Sub(frame)
-		}
-
-		// get camera
-		var camera *camera_s = listWhere(GAME_OBJECTS, func(i interface{}) bool {
-			_, ok := i.(*camera_s)
-			return ok
-		}).(*camera_s)
-
-		// select player from list
-		player := listWhere(GAME_OBJECTS, func(i interface{}) bool {
-			_, ok := i.(*player_s)
-			return ok
-		}).(*player_s)
-
-		// if mouse held, apply acceleration to player
-		if INPUT.isMousePressed {
-			playerFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, player.transform.position)
-			player.transform.acceleration = playerFramePosition.Sub(INPUT.mousePosition)
-		} else {
-			player.transform.acceleration = NewZeroVector()
-		}
-
-		// update player transform
-		player.transform = player.transform.applyAcceleration(secondsPerFrame.Seconds())
-
-		// update asteroid transforms
-		var asteroidsList *list.List = listSelect(GAME_OBJECTS, func(i interface{}) bool {
-			_, ok := i.(*asteroid_s)
-			return ok
-		})
-		for e := asteroidsList.Front(); e != nil; e = e.Next() {
-			asteroid := e.Value.(*asteroid_s)
-			asteroid.transform = asteroid.transform.applyAcceleration(secondsPerFrame.Seconds())
-		}
-
-		// update camera
-		camera.Vector = player.transform.position
-
-		// render
-		window.Clear(palette.BLACK)
-
-		// render player
-		playerDrawer := player.circle.GetDrawer()
-		playerFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, player.transform.position).ToSFMLVector2f()
-		playerDrawer.SetPosition(playerFramePosition)
-		window.Draw(playerDrawer, sf.DefaultRenderStates())
-
-		// render asteroids
-		for e := asteroidsList.Front(); e != nil; e = e.Next() {
-			asteroid := e.Value.(*asteroid_s)
-			asteroidDrawer := asteroid.circle_s.GetDrawer()
-			asteroidFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, asteroid.transform.position).ToSFMLVector2f()
-			asteroidDrawer.SetPosition(asteroidFramePosition)
-			window.Draw(asteroidDrawer, sf.DefaultRenderStates())
-		}
-
-		window.Display()
+		input(window)                              // update global INPUT
+		update(window, durationPerFrame.Seconds()) // update global GAME_OBJECTS
+		render(window)                             // write to screen
 
 		// sleep if frametime is short
-		time.Sleep(time.Duration(int64(secondsPerFrame) - int64(time.Since(startTime))))
+		time.Sleep(time.Duration(int64(durationPerFrame) - int64(time.Since(startTime))))
 	}
+}
+
+func getFramePosition(winx, winy uint, camera, x Vector) Vector {
+	frame := camera.Add(NewCartesian(-0.5*float64(winx), -0.5*float64(winy)))
+	return x.Sub(frame)
 }

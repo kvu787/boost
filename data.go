@@ -28,12 +28,6 @@ func init() {
 	)
 }
 
-// func newList(elements ...interface{}) *list.List {
-// 	result := list.New()
-// 	pushFrontAll(result, elements)
-// 	return result
-// }
-
 func pushFrontAll(l *list.List, objects ...interface{}) {
 	for _, object := range objects {
 		l.PushFront(object)
