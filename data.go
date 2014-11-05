@@ -12,19 +12,19 @@ var (
 )
 
 func init() {
-	GAME_OBJECTS = list.New()
-	GAME_OBJECTS.PushFront(&player_s{
-		transform_s{NewZeroVector(), NewZeroVector(), NewZeroVector()},
-		circle_s{10, 0, 0, palette.BLUE, palette.WHITE},
-	})
-	GAME_OBJECTS.PushFront(&asteroid_s{
-		transform_s{NewCartesian(50, -60), NewCartesian(-5, 5), NewZeroVector()},
-		circle_s{20, 2, 0, palette.GRAY, palette.WHITE},
-	})
-	GAME_OBJECTS.PushFront(&asteroid_s{
-		transform_s{NewCartesian(-60, 20), NewZeroVector(), NewZeroVector()},
-		circle_s{20, 2, 0, palette.GRAY, palette.WHITE},
-	})
+	pushFrontAll(GAME_OBJECTS,
+		&player_s{
+			transform_s{NewZeroVector(), NewZeroVector(), NewZeroVector()},
+			circle_s{10, 0, 0, palette.BLUE, palette.WHITE},
+		},
+		&asteroid_s{
+			transform_s{NewCartesian(50, -60), NewCartesian(-5, 5), NewZeroVector()},
+			circle_s{20, 2, 0, palette.GRAY, palette.WHITE},
+		}, &asteroid_s{
+			transform_s{NewCartesian(-60, 20), NewZeroVector(), NewZeroVector()},
+			circle_s{20, 2, 0, palette.GRAY, palette.WHITE},
+		},
+	)
 }
 
 // func newList(elements ...interface{}) *list.List {
@@ -33,8 +33,8 @@ func init() {
 // 	return result
 // }
 
-// func pushFrontAll(l *list.List, objects ...interface{}) {
-// 	for _, object := range objects {
-// 		l.PushFront(object)
-// 	}
-// }
+func pushFrontAll(l *list.List, objects ...interface{}) {
+	for _, object := range objects {
+		l.PushFront(object)
+	}
+}
