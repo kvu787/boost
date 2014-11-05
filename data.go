@@ -1,12 +1,16 @@
 package main
 
 import (
+	"container/list"
+
 	"bitbucket.org/kvu787/boost/lib/palette"
 	. "bitbucket.org/kvu787/boost/lib/vector"
-	"container/list"
+
+	sf "bitbucket.org/kvu787/gosfml2"
 )
 
 var (
+	WINDOW       *sf.RenderWindow
 	INPUT        *input_s   = &input_s{false, nil}
 	GAME_OBJECTS *list.List = list.New()
 )

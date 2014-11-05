@@ -26,17 +26,17 @@ func main() {
 
 	// setup
 	fmt.Println("Setting up window...")
-	window := setup()
+	setup()
 
 	// main loop
 	fmt.Println("Entering game loop...")
-	for window.IsOpen() {
+	for WINDOW.IsOpen() {
 		// vsync
 		startTime = time.Now()
 
-		input(window)                              // update global INPUT
-		update(window, durationPerFrame.Seconds()) // update global GAME_OBJECTS
-		render(window)                             // write to screen
+		input()                            // update global INPUT
+		update(durationPerFrame.Seconds()) // update global GAME_OBJECTS
+		render()                           // write to screen
 
 		// sleep if frametime is short
 		time.Sleep(time.Duration(int64(durationPerFrame) - int64(time.Since(startTime))))
@@ -48,31 +48,31 @@ func getFramePosition(winx, winy uint, camera, x Vector) Vector {
 	return x.Sub(frame)
 }
 
-func setup() *sf.RenderWindow {
+func setup() {
 	runtime.LockOSThread()
-	return sf.NewRenderWindow(
+	WINDOW = sf.NewRenderWindow(
 		sf.VideoMode{WINDOW_SIZE_X, WINDOW_SIZE_Y, 32},
 		"boost",
 		sf.StyleDefault,
 		sf.DefaultContextSettings())
 }
 
-func input(window *sf.RenderWindow) {
-	for event := window.PollEvent(); event != nil; event = window.PollEvent() {
+func input() {
+	for event := WINDOW.PollEvent(); event != nil; event = WINDOW.PollEvent() {
 		switch event.(type) {
 		case sf.EventClosed:
-			window.Close()
+			WINDOW.Close()
 		case sf.EventMouseButtonPressed:
 			INPUT.isMousePressed = true
 		case sf.EventMouseButtonReleased:
 			INPUT.isMousePressed = false
 		}
 	}
-	position := sf.MouseGetPosition(window)
+	position := sf.MouseGetPosition(WINDOW)
 	INPUT.mousePosition = NewCartesian(float64(position.X), float64(position.Y))
 }
 
-func update(window *sf.RenderWindow, secondsPerFrame float64) {
+func update(secondsPerFrame float64) {
 	var camera *camera_s = listWhere(GAME_OBJECTS, CameraTag).(*camera_s)
 	var player *player_s = listWhere(GAME_OBJECTS, PlayerTag).(*player_s)
 	var asteroidsList *list.List = listSelect(GAME_OBJECTS, AsteroidTag)
@@ -104,19 +104,19 @@ func update(window *sf.RenderWindow, secondsPerFrame float64) {
 	camera.Vector = player.transform.position
 }
 
-func render(window *sf.RenderWindow) {
+func render() {
 	var camera *camera_s = listWhere(GAME_OBJECTS, CameraTag).(*camera_s)
 	var player *player_s = listWhere(GAME_OBJECTS, PlayerTag).(*player_s)
 	var asteroidsList *list.List = listSelect(GAME_OBJECTS, AsteroidTag)
 
 	// render
-	window.Clear(palette.BLACK)
+	WINDOW.Clear(palette.BLACK)
 
 	// render player
 	playerDrawer := player.circle.GetDrawer()
 	playerFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, player.transform.position).ToSFMLVector2f()
 	playerDrawer.SetPosition(playerFramePosition)
-	window.Draw(playerDrawer, sf.DefaultRenderStates())
+	WINDOW.Draw(playerDrawer, sf.DefaultRenderStates())
 
 	// render asteroids
 	for e := asteroidsList.Front(); e != nil; e = e.Next() {
@@ -124,8 +124,8 @@ func render(window *sf.RenderWindow) {
 		asteroidDrawer := asteroid.circle_s.GetDrawer()
 		asteroidFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, asteroid.transform.position).ToSFMLVector2f()
 		asteroidDrawer.SetPosition(asteroidFramePosition)
-		window.Draw(asteroidDrawer, sf.DefaultRenderStates())
+		WINDOW.Draw(asteroidDrawer, sf.DefaultRenderStates())
 	}
 
-	window.Display()
+	WINDOW.Display()
 }
