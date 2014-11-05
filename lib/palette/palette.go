@@ -13,4 +13,5 @@ var (
 	WHITE      sf.Color = sf.ColorWhite()
 	DARK_GREEN sf.Color = sf.Color{25, 112, 8, 255}
 	LASER_BLUE sf.Color = sf.Color{12, 231, 242, 255}
+	BLACK      sf.Color = sf.ColorBlack()
 )

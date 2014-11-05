@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
 	"runtime"
 	"time"
@@ -13,129 +14,113 @@ import (
 
 // config variables
 const (
-	WINDOW_SIZE_X uint = 640
-	WINDOW_SIZE_Y uint = 480
-	FPS           int  = 120
+	WINDOW_SIZE_X uint = 1000
+	WINDOW_SIZE_Y uint = 720
+	FPS           int  = 65
 )
+
+func setup() *sf.RenderWindow {
+	runtime.LockOSThread()
+	return sf.NewRenderWindow(
+		sf.VideoMode{WINDOW_SIZE_X, WINDOW_SIZE_Y, 32},
+		"boost",
+		sf.StyleDefault,
+		sf.DefaultContextSettings())
+}
+
+func input(window *sf.RenderWindow) {
+	for event := window.PollEvent(); event != nil; event = window.PollEvent() {
+		switch event.(type) {
+		case sf.EventClosed:
+			window.Close()
+		case sf.EventMouseButtonPressed:
+			INPUT.isMousePressed = true
+		case sf.EventMouseButtonReleased:
+			INPUT.isMousePressed = false
+		}
+	}
+	position := sf.MouseGetPosition(window)
+	INPUT.mousePosition = NewCartesian(float64(position.X), float64(position.Y))
+}
 
 func main() {
 	// game variables
 	camera := NewZeroVector()
-	player := player_s{
-		NewZeroVector(),
-		NewZeroVector(),
-		NewZeroVector(),
-	}
 	startTime := time.Now()
 	secondsPerFrame := time.Duration(int64(time.Second) / int64(FPS))
-	var isMousePressed = false
-	circle := func() *sf.CircleShape {
-		circle, err := sf.NewCircleShape()
-		var innerCircleRadius float64 = 5
-		var outlineThickness float64 = 0.8
-		if err != nil {
-			panic(err)
-		}
-		circle.SetFillColor(palette.BLUE)
-		circle.SetOutlineColor(palette.WHITE)
-		circle.SetOutlineThickness(float32(outlineThickness))
-		circle.SetRadius(float32(innerCircleRadius))
-		circle.SetOrigin(NewCartesian(innerCircleRadius, innerCircleRadius).ToSFMLVector2f())
-		circle.SetPosition(NewZeroVector().ToSFMLVector2f())
-		circle.SetRotation(0)
-		return circle
-	}()
-	asteroidPosition := NewCartesian(50, -50)
-	asteroid := func() *sf.CircleShape {
-		circle, err := sf.NewCircleShape()
-		var innerCircleRadius float64 = 20
-		var outlineThickness float64 = 3
-		if err != nil {
-			panic(err)
-		}
-		circle.SetFillColor(palette.GRAY)
-		circle.SetOutlineColor(palette.WHITE)
-		circle.SetOutlineThickness(float32(outlineThickness))
-		circle.SetRadius(float32(innerCircleRadius))
-		circle.SetOrigin(NewCartesian(innerCircleRadius, innerCircleRadius).ToSFMLVector2f())
-		circle.SetPosition(asteroidPosition.ToSFMLVector2f())
-		circle.SetRotation(0)
-		return circle
-	}()
 
 	// setup
 	fmt.Println("Setting up window...")
-	runtime.LockOSThread()
-	window := sf.NewRenderWindow(
-		sf.VideoMode{640, 480, 32},
-		"boost",
-		sf.StyleDefault,
-		sf.DefaultContextSettings())
+	window := setup()
+
+	fmt.Println("Entering game loop...")
 
 	// main loop
 	for window.IsOpen() {
-		getRenderPosition := func(winx, winy uint, camera, x Vector) Vector {
-			frame := camera.Add(NewCartesian(-0.5*float64(winx), -0.5*float64(winy)))
-			return x.Sub(frame)
-		}
-
-		// loop variables
-		var mouseClick Vector = nil
 
 		// vsync
 		startTime = time.Now()
 
-		// check for user input
-		for event := window.PollEvent(); event != nil; event = window.PollEvent() {
-			switch event.(type) {
-			case sf.EventClosed:
-				window.Close()
-			case sf.EventMouseButtonPressed:
-				isMousePressed = true
-			case sf.EventMouseButtonReleased:
-				isMousePressed = false
-			}
-		}
-		if isMousePressed {
-			mousePosition := func() Vector {
-				position := sf.MouseGetPosition(window)
-				return NewCartesian(float64(position.X), float64(position.Y))
-			}()
-			mouseClick = mousePosition
+		// update global INPUT
+		input(window)
+
+		getFramePosition := func(winx, winy uint, camera, x Vector) Vector {
+			frame := camera.Add(NewCartesian(-0.5*float64(winx), -0.5*float64(winy)))
+			return x.Sub(frame)
 		}
 
-		// set player object acceleration
-		if mouseClick != nil {
-			playerRenderPosition := getRenderPosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, player.position)
-			player.acceleration = playerRenderPosition.Sub(mouseClick)
+		// select player from list
+		player := listWhere(GAME_OBJECTS, func(i interface{}) bool {
+			_, ok := i.(*player_s)
+			return ok
+		}).(*player_s)
+
+		// if mouse held, apply acceleration to player
+		if INPUT.isMousePressed {
+			playerFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, player.transform.position)
+			player.transform.acceleration = playerFramePosition.Sub(INPUT.mousePosition)
 		} else {
-			player.acceleration = NewZeroVector()
+			player.transform.acceleration = NewZeroVector()
 		}
 
-		// update player
-		velocityDelta := player.acceleration.Mul(secondsPerFrame.Seconds())
-		player.velocity = player.velocity.Add(velocityDelta)
-		positionDelta := player.velocity.Mul(secondsPerFrame.Seconds())
-		player.position = player.position.Add(positionDelta)
+		// update player transform
+		player.transform = player.transform.applyAcceleration(secondsPerFrame.Seconds())
+		fmt.Println(player.transform.position)
+
+		// update asteroid transforms
+		var asteroidsList *list.List = listSelect(GAME_OBJECTS, func(i interface{}) bool {
+			_, ok := i.(*asteroid_s)
+			return ok
+		})
+		for e := asteroidsList.Front(); e != nil; e = e.Next() {
+			asteroid := e.Value.(*asteroid_s)
+			asteroid.transform = asteroid.transform.applyAcceleration(secondsPerFrame.Seconds())
+		}
 
 		// update camera
-		camera = player.position.Add(NewCartesian(-100, -100))
+		camera = player.transform.position
 
 		// render
-		circle.SetPosition(getRenderPosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, player.position).ToSFMLVector2f())
-		asteroid.SetPosition(getRenderPosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, asteroidPosition).ToSFMLVector2f())
-		window.Clear(sf.ColorBlack())
-		window.Draw(circle, sf.DefaultRenderStates())
-		window.Draw(asteroid, sf.DefaultRenderStates())
+		window.Clear(palette.BLACK)
+
+		// render player
+		playerDrawer := player.circle.GetDrawer()
+		playerFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, player.transform.position).ToSFMLVector2f()
+		playerDrawer.SetPosition(playerFramePosition)
+		window.Draw(playerDrawer, sf.DefaultRenderStates())
+
+		// render asteroids
+		for e := asteroidsList.Front(); e != nil; e = e.Next() {
+			asteroid := e.Value.(*asteroid_s)
+			asteroidDrawer := asteroid.circle_s.GetDrawer()
+			asteroidFramePosition := getFramePosition(WINDOW_SIZE_X, WINDOW_SIZE_Y, camera, asteroid.transform.position).ToSFMLVector2f()
+			asteroidDrawer.SetPosition(asteroidFramePosition)
+			window.Draw(asteroidDrawer, sf.DefaultRenderStates())
+		}
+
 		window.Display()
 
 		// sleep if frametime is short
 		time.Sleep(time.Duration(int64(secondsPerFrame) - int64(time.Since(startTime))))
 	}
-}
-
-type player_s struct {
-	position     Vector
-	velocity     Vector
-	acceleration Vector
 }
