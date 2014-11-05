@@ -16,11 +16,11 @@ func init() {
 		&camera_s{NewZeroVector()},
 		&player_s{
 			transform_s{NewZeroVector(), NewZeroVector(), NewZeroVector()},
-			circle_s{10, 0, 0, palette.BLUE, palette.WHITE},
+			circle_s{5, 0, 0, palette.BLUE, palette.WHITE},
 		},
 		&asteroid_s{
 			transform_s{NewCartesian(50, -60), NewCartesian(-5, 5), NewZeroVector()},
-			circle_s{20, 2, 0, palette.GRAY, palette.WHITE},
+			circle_s{20, 1.5, 0, palette.GRAY, palette.WHITE},
 		}, &asteroid_s{
 			transform_s{NewCartesian(-60, 20), NewZeroVector(), NewZeroVector()},
 			circle_s{20, 2, 0, palette.GRAY, palette.WHITE},

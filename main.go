@@ -19,6 +19,35 @@ const (
 	FPS           int  = 65
 )
 
+func main() {
+	// timing variables
+	startTime := time.Now()
+	durationPerFrame := time.Duration(int64(time.Second) / int64(FPS))
+
+	// setup
+	fmt.Println("Setting up window...")
+	window := setup()
+
+	// main loop
+	fmt.Println("Entering game loop...")
+	for window.IsOpen() {
+		// vsync
+		startTime = time.Now()
+
+		input(window)                              // update global INPUT
+		update(window, durationPerFrame.Seconds()) // update global GAME_OBJECTS
+		render(window)                             // write to screen
+
+		// sleep if frametime is short
+		time.Sleep(time.Duration(int64(durationPerFrame) - int64(time.Since(startTime))))
+	}
+}
+
+func getFramePosition(winx, winy uint, camera, x Vector) Vector {
+	frame := camera.Add(NewCartesian(-0.5*float64(winx), -0.5*float64(winy)))
+	return x.Sub(frame)
+}
+
 func setup() *sf.RenderWindow {
 	runtime.LockOSThread()
 	return sf.NewRenderWindow(
@@ -59,10 +88,17 @@ func update(window *sf.RenderWindow, secondsPerFrame float64) {
 	// update player transform
 	player.transform = player.transform.applyAcceleration(secondsPerFrame)
 
+	// update asteroid transforms
 	for e := asteroidsList.Front(); e != nil; e = e.Next() {
 		asteroid := e.Value.(*asteroid_s)
 		asteroid.transform = asteroid.transform.applyAcceleration(secondsPerFrame)
 	}
+
+	// // collide asteroids
+	// for e1 := asteroidsList.Front(); e1 != nil; e1 = e1.Next() {
+	// 	for e2 := asteroidsList.Front(); e2 != nil; e2 = e2.Next() {
+	// 	}
+	// }
 
 	// update camera
 	camera.Vector = player.transform.position
@@ -92,34 +128,4 @@ func render(window *sf.RenderWindow) {
 	}
 
 	window.Display()
-}
-
-func main() {
-	// timing variables
-	startTime := time.Now()
-	durationPerFrame := time.Duration(int64(time.Second) / int64(FPS))
-
-	// setup
-	fmt.Println("Setting up window...")
-	window := setup()
-
-	// main loop
-	fmt.Println("Entering game loop...")
-	for window.IsOpen() {
-
-		// vsync
-		startTime = time.Now()
-
-		input(window)                              // update global INPUT
-		update(window, durationPerFrame.Seconds()) // update global GAME_OBJECTS
-		render(window)                             // write to screen
-
-		// sleep if frametime is short
-		time.Sleep(time.Duration(int64(durationPerFrame) - int64(time.Since(startTime))))
-	}
-}
-
-func getFramePosition(winx, winy uint, camera, x Vector) Vector {
-	frame := camera.Add(NewCartesian(-0.5*float64(winx), -0.5*float64(winy)))
-	return x.Sub(frame)
 }
