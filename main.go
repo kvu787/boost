@@ -1,7 +1,9 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
+	"math/rand"
 	"runtime"
 	"time"
 
@@ -11,8 +13,6 @@ import (
 
 	sf "bitbucket.org/kvu787/gosfml2"
 )
-
-// config variables
 
 func main() {
 	// timing variables
@@ -64,14 +64,41 @@ func input() {
 }
 
 func update() {
+	fmt.Println(ASTEROIDS.Len())
+
+	// spawn asteroid
+	if rand.Intn(30) == 0 {
+		radian := DegreesToRadians(uint(rand.Intn(360)))
+		velocityMagnitude := rand.Intn(20) + 80
+		velocityDegreeSpread := 30.0
+		radius := rand.Intn(30) + 70
+
+		position := NewPolar(SPAWN_BOUNDARY-10, float64(radian))
+		velocity := NewZeroVector().Sub(position)
+		velocity.SetMagnitude(float64(velocityMagnitude))
+		velocity.SetAngle(
+			velocity.GetAngle() -
+				velocityDegreeSpread/2.0 +
+				(velocityDegreeSpread * rand.Float64()))
+		newAsteroid := &Asteroid_s{
+			Transform_s{
+				position,
+				velocity,
+				NewZeroVector(),
+			},
+			Circle_s{float64(radius)},
+			RenderProperties_s{0, 0, palette.LIGHT_GRAY, palette.WHITE}}
+		ASTEROIDS.PushBack(newAsteroid)
+	}
+
 	// update player acceleration with user input
 	if INPUT.IsMousePressed {
 		camera := PLAYER.Transform.Position.Add(CAMERA_OFFSET)
 		framedPlayerPosition := getFramedPosition(camera, PLAYER.Transform.Position)
 		acceleration := framedPlayerPosition.Sub(INPUT.MousePosition)
-		PLAYER.Transform.Acceleration = acceleration
+		PLAYER.Transform.Velocity = acceleration
 	} else {
-		PLAYER.Transform.Acceleration = NewZeroVector()
+		PLAYER.Transform.Velocity = NewZeroVector()
 	}
 
 	// update player transform
@@ -86,10 +113,44 @@ func update() {
 		PLAYER.Transform.Velocity = NewZeroVector()
 	}
 
+	// check if asteroids are out of bounds
+	for e, next := ASTEROIDS.Front(), new(list.Element); e != nil; e = next {
+		next = e.Next()
+		asteroid := e.Value.(*Asteroid_s)
+		if asteroid.Transform.Position.GetMagnitude() > SPAWN_BOUNDARY {
+			ASTEROIDS.Remove(e)
+		}
+	}
+
 	// update asteroid transforms
 	for e := ASTEROIDS.Front(); e != nil; e = e.Next() {
 		asteroid := e.Value.(*Asteroid_s)
 		asteroid.Transform = asteroid.Transform.Act(DURATION_PER_FRAME)
+	}
+
+	// collide asteroids
+	for e1 := ASTEROIDS.Front(); e1 != nil; e1 = e1.Next() {
+		for e2 := e1.Next(); e2 != nil; e2 = e2.Next() {
+			a1 := e1.Value.(*Asteroid_s)
+			a2 := e2.Value.(*Asteroid_s)
+
+			distance := a1.Transform.Position.Sub(a2.Transform.Position).GetMagnitude()
+			sumRadius := a1.Circle.Radius + a2.Circle.Radius
+			isIntersecting := distance+3 < sumRadius
+			if isIntersecting {
+
+				// wimpy collision resolution
+				resolve := func(x1, x2 Transform_s) Vector {
+					fromx1tox2 := x2.Position.Sub(x1.Position)
+					proj := x1.Velocity.Projection(fromx1tox2)
+					rej := x1.Velocity.Rejection(fromx1tox2)
+					proj = proj.Mul(-1)
+					return proj.Add(rej)
+				}
+				a1.Transform.Velocity = resolve(a1.Transform, a2.Transform)
+				a2.Transform.Velocity = resolve(a2.Transform, a1.Transform)
+			}
+		}
 	}
 }
 

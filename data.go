@@ -16,8 +16,8 @@ const (
 	WINDOW_SIZE_Y         uint    = 720
 	FPS                   uint    = 65
 	ASTEROID_LIMIT        uint    = 40
-	PLAYER_BOUNDARY       float64 = 350
-	SPAWN_BOUNDARY        float64 = 500
+	PLAYER_BOUNDARY       float64 = 1000
+	SPAWN_BOUNDARY        float64 = 1800
 	PLAYER_RESET_DISTANCE float64 = 3
 )
 
@@ -47,8 +47,8 @@ var (
 			RenderProperties_s{0, 0, palette.LIGHT_GRAY, palette.WHITE}},
 		&Asteroid_s{
 			Transform_s{
-				NewPolar(50, DegreesToRadians(200)),
-				NewPolar(5, DegreesToRadians(20)),
+				NewPolar(150, DegreesToRadians(240)),
+				NewPolar(60, DegreesToRadians(60)),
 				NewZeroVector(),
 			},
 			Circle_s{15},

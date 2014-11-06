@@ -25,8 +25,8 @@ type Vector interface {
 	SetMagnitude(magnitude float64)
 	SetAngle(angle float64)
 
-	Distance(other Vector) float64
-	Direction(other Vector) float64
+	// Distance(other Vector) float64
+	// Direction(other Vector) float64
 
 	ToSFMLVector2f() sf.Vector2f
 }
@@ -92,7 +92,7 @@ func (v *vectorStruct) SetAngle(angle float64) {
 func (v vectorStruct) Distance(other Vector) float64 {
 	return v.Sub(other).GetMagnitude()
 }
-func (v vectorStruct) Direction(other Vector) float64 {
+func (v *vectorStruct) Direction(other Vector) float64 {
 	return (other.Sub(v)).GetAngle()
 }
 
