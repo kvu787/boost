@@ -1,0 +1,11 @@
+- different color asteroids
+- player asteroid collision
+- implement slipstream
+	- When checking asteroid collisions
+	- Also check if player is between them
+- better spawn behavior
+	- Initial spawn: outside player window
+		- Check for intersections
+	- After: at spawn boundary
+		- Asteroid number limit
+		- Make sure not spawning too close to last location

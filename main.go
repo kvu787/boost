@@ -32,7 +32,7 @@ func main() {
 
 		input()  // update global INPUT
 		update() // update global GAME_OBJECTS
-		render() // write to screen
+		render() // write to WINDOW
 
 		// sleep if frametime is short
 		time.Sleep(time.Duration(int64(durationPerFrame) - int64(time.Since(startTime))))
@@ -68,6 +68,7 @@ func update() {
 
 	// spawn asteroid
 	if rand.Intn(30) == 0 {
+		color := ASTEROID_COLORS[rand.Intn(len(ASTEROID_COLORS))]
 		radian := DegreesToRadians(uint(rand.Intn(360)))
 		velocityMagnitude := rand.Intn(20) + 80
 		velocityDegreeSpread := 30.0
@@ -87,7 +88,7 @@ func update() {
 				NewZeroVector(),
 			},
 			Circle_s{float64(radius)},
-			RenderProperties_s{0, 0, palette.LIGHT_GRAY, palette.WHITE}}
+			RenderProperties_s{0, 0, color, palette.WHITE}}
 		ASTEROIDS.PushBack(newAsteroid)
 	}
 
@@ -159,6 +160,21 @@ func render() {
 
 	// get camera
 	var camera Vector = PLAYER.Transform.Position.Add(CAMERA_OFFSET)
+
+	// render player boundary
+	boundaryCenterPosition := getFramedPosition(camera, NewZeroVector())
+	c, err := sf.NewCircleShape()
+	if err != nil {
+		panic(err)
+	}
+	var pb float32 = float32(PLAYER_BOUNDARY + 10)
+	c.SetPosition(boundaryCenterPosition.ToSFMLVector2f())
+	c.SetRadius(pb)
+	c.SetOrigin(sf.Vector2f{pb, pb})
+	c.SetOutlineThickness(5)
+	c.SetOutlineColor(palette.WHITE)
+	c.SetFillColor(palette.TRANSPARENT)
+	WINDOW.Draw(c, sf.DefaultRenderStates())
 
 	// display player
 	framedPlayerPosition := getFramedPosition(camera, PLAYER.Transform.Position)

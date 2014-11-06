@@ -36,5 +36,12 @@ var (
 		Circle_s{10},
 		RenderProperties_s{0, 0, palette.BLUE, palette.WHITE}}
 
-	ASTEROIDS *list.List = list.New()
+	ASTEROIDS       *list.List = list.New()
+	ASTEROID_COLORS []sf.Color = []sf.Color{
+		palette.LIGHT_GRAY,
+		palette.GRAY,
+		palette.DARK_BROWN,
+		palette.LIGHT_BROWN,
+		palette.LASER_BLUE,
+	}
 )
