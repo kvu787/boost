@@ -3,13 +3,14 @@ package main
 import (
 	"container/list"
 	"fmt"
+	"math"
 	"math/rand"
 	"runtime"
 	"time"
 
-	"bitbucket.org/kvu787/boost/lib/palette"
-	. "bitbucket.org/kvu787/boost/lib/vector"
-	. "bitbucket.org/kvu787/boost/objects"
+	p "bitbucket.org/kvu787/boost/lib/palette"
+	v "bitbucket.org/kvu787/boost/lib/vector"
+	o "bitbucket.org/kvu787/boost/objects"
 
 	sf "bitbucket.org/kvu787/gosfml2"
 )
@@ -20,7 +21,12 @@ func main() {
 	durationPerFrame := time.Duration(int64(time.Second) / int64(FPS))
 
 	// setup
-	setup()
+	setupWindow()
+
+	// setup game variables
+	setupGameVariables()
+
+	spawnInitialAsteroids(100)
 
 	// main loop
 	for WINDOW.IsOpen() {
@@ -37,13 +43,83 @@ func main() {
 	}
 }
 
-func setup() {
+func setupWindow() {
 	runtime.LockOSThread()
 	WINDOW = sf.NewRenderWindow(
 		sf.VideoMode{WINDOW_SIZE_X, WINDOW_SIZE_Y, 32},
 		"boost",
 		sf.StyleDefault,
 		sf.DefaultContextSettings())
+}
+
+func setupGameVariables() {
+	DURATION_PER_FRAME = time.Duration(int64(time.Second) / int64(FPS))
+	CAMERA_OFFSET = v.NewCartesian(CAMERA_OFFSET_X, CAMERA_OFFSET_Y)
+	INPUT = &o.Input_s{false, nil}
+	PLAYER = &o.Player_s{
+		o.Transform_s{
+			v.NewZeroVector(),
+			v.NewZeroVector(),
+			v.NewZeroVector(),
+		},
+		o.Circle_s{5},
+		o.RenderProperties_s{1, 0, p.BLUE, p.WHITE}}
+	ASTEROIDS = list.New()
+	ASTEROID_COLORS = []sf.Color{
+		p.LIGHT_GRAY,
+		p.GRAY,
+		p.DARK_BROWN,
+		p.LIGHT_BROWN,
+	}
+}
+
+func spawnInitialAsteroids(n uint) {
+	for n != 0 {
+		// create asteroid
+		color := ASTEROID_COLORS[rand.Intn(len(ASTEROID_COLORS))]
+		velocityMagnitude := rand.Float64()*(ASTEROID_MAX_VELOCITY-ASTEROID_MIN_VELOCITY) + ASTEROID_MIN_VELOCITY
+		radius := rand.Float64()*(ASTEROID_MAX_RADIUS-ASTEROID_MIN_RADIUS) + ASTEROID_MIN_RADIUS
+
+		velocity := v.NewPolar(velocityMagnitude, rand.Float64()*2*math.Pi)
+		newAsteroid := &o.Asteroid_s{
+			o.Transform_s{
+				v.NewZeroVector(),
+				velocity,
+				v.NewZeroVector(),
+			},
+			o.Circle_s{radius},
+			o.RenderProperties_s{0, 0, color, p.WHITE}}
+
+		// check if it intersects with anything
+		for {
+			// generate random position
+			magnitude := float64(SPAWN_BOUNDARY) * rand.Float64()
+			angle := 2 * math.Pi * rand.Float64()
+			newAsteroid.Transform.Position = v.NewPolar(magnitude, angle)
+
+			// check intersection with player
+			if o.AreCirclesIntersecting(
+				o.CircleShape_s{PLAYER.Transform, PLAYER.Circle},
+				o.CircleShape_s{newAsteroid.Transform, newAsteroid.Circle}, -100) {
+				continue
+			}
+
+			// check intersection with other asteroids
+			isIntersectingWithOtherAsteroid := listAny(ASTEROIDS, func(i interface{}) bool {
+				a := i.(*o.Asteroid_s)
+				return o.AreCirclesIntersecting(
+					o.CircleShape_s{a.Transform, a.Circle},
+					o.CircleShape_s{newAsteroid.Transform, newAsteroid.Circle}, -5)
+			})
+			if isIntersectingWithOtherAsteroid {
+				continue
+			}
+
+			break
+		}
+		ASTEROIDS.PushBack(newAsteroid)
+		n--
+	}
 }
 
 func input() {
@@ -58,34 +134,34 @@ func input() {
 		}
 	}
 	position := sf.MouseGetPosition(WINDOW)
-	INPUT.MousePosition = NewCartesian(float64(position.X), float64(position.Y))
+	INPUT.MousePosition = v.NewCartesian(float64(position.X), float64(position.Y))
 }
 
 func update() {
-	fmt.Println(ASTEROIDS.Len())
+	fmt.Println("asteroids: ", ASTEROIDS.Len())
 	// spawn asteroid
 	if rand.Intn(30) == 0 {
 		color := ASTEROID_COLORS[rand.Intn(len(ASTEROID_COLORS))]
-		radian := DegreesToRadians(uint(rand.Intn(360)))
-		velocityMagnitude := rand.Intn(20) + 80
+		radian := v.DegreesToRadians(uint(rand.Intn(360)))
+		velocityMagnitude := rand.Float64()*(ASTEROID_MAX_VELOCITY-ASTEROID_MIN_VELOCITY) + ASTEROID_MIN_VELOCITY
 		velocityDegreeSpread := 30.0
-		radius := rand.Intn(30) + 70
+		radius := rand.Float64()*(ASTEROID_MAX_RADIUS-ASTEROID_MIN_RADIUS) + ASTEROID_MIN_RADIUS
 
-		position := NewPolar(SPAWN_BOUNDARY-10, float64(radian))
-		velocity := NewZeroVector().Sub(position)
-		velocity.SetMagnitude(float64(velocityMagnitude))
+		position := v.NewPolar(SPAWN_BOUNDARY-10, radian)
+		velocity := v.NewZeroVector().Sub(position)
+		velocity.SetMagnitude(velocityMagnitude)
 		velocity.SetAngle(
 			velocity.GetAngle() -
 				velocityDegreeSpread/2.0 +
 				(velocityDegreeSpread * rand.Float64()))
-		newAsteroid := &Asteroid_s{
-			Transform_s{
+		newAsteroid := &o.Asteroid_s{
+			o.Transform_s{
 				position,
 				velocity,
-				NewZeroVector(),
+				v.NewZeroVector(),
 			},
-			Circle_s{float64(radius)},
-			RenderProperties_s{0, 0, color, palette.WHITE}}
+			o.Circle_s{float64(radius)},
+			o.RenderProperties_s{0, 0, color, p.WHITE}}
 		ASTEROIDS.PushBack(newAsteroid)
 	}
 
@@ -94,9 +170,9 @@ func update() {
 		camera := PLAYER.Transform.Position.Add(CAMERA_OFFSET)
 		framedPlayerPosition := getFramedPosition(camera, PLAYER.Transform.Position)
 		acceleration := framedPlayerPosition.Sub(INPUT.MousePosition)
-		PLAYER.Transform.Acceleration = acceleration
+		PLAYER.Transform.Acceleration = acceleration.Mul(SENSITIVITY)
 	} else {
-		PLAYER.Transform.Acceleration = NewZeroVector()
+		PLAYER.Transform.Acceleration = v.NewZeroVector()
 	}
 
 	// update player transform
@@ -104,17 +180,21 @@ func update() {
 
 	// check if player is out of bounds
 	if PLAYER.Transform.Position.GetMagnitude() >= float64(PLAYER_BOUNDARY) {
-		PLAYER.Transform.Position = NewPolar(
+		PLAYER.Transform.Position = v.NewPolar(
 			float64(PLAYER_BOUNDARY-PLAYER_RESET_DISTANCE),
 			PLAYER.Transform.Position.GetAngle())
-		PLAYER.Transform.Acceleration = NewZeroVector()
-		PLAYER.Transform.Velocity = NewZeroVector()
+
+		PLAYER.Transform.Acceleration = v.NewZeroVector()
+
+		PLAYER.Transform.Velocity = v.NewPolar(
+			PLAYER_RESET_VELCOITY,
+			PLAYER.Transform.Position.GetAngle()+math.Pi)
 	}
 
 	// remove asteroids that are out of bounds
 	for e, next := ASTEROIDS.Front(), new(list.Element); e != nil; e = next {
 		next = e.Next()
-		asteroid := e.Value.(*Asteroid_s)
+		asteroid := e.Value.(*o.Asteroid_s)
 		if asteroid.Transform.Position.GetMagnitude() > SPAWN_BOUNDARY {
 			ASTEROIDS.Remove(e)
 		}
@@ -122,22 +202,22 @@ func update() {
 
 	// update asteroid transforms
 	for e := ASTEROIDS.Front(); e != nil; e = e.Next() {
-		asteroid := e.Value.(*Asteroid_s)
+		asteroid := e.Value.(*o.Asteroid_s)
 		asteroid.Transform = asteroid.Transform.Act(DURATION_PER_FRAME)
 	}
 
 	// collide asteroids
 	for e1 := ASTEROIDS.Front(); e1 != nil; e1 = e1.Next() {
 		for e2 := e1.Next(); e2 != nil; e2 = e2.Next() {
-			a1 := e1.Value.(*Asteroid_s)
-			a2 := e2.Value.(*Asteroid_s)
+			a1 := e1.Value.(*o.Asteroid_s)
+			a2 := e2.Value.(*o.Asteroid_s)
 
 			distance := a1.Transform.Position.Sub(a2.Transform.Position).GetMagnitude()
 			sumRadius := a1.Circle.Radius + a2.Circle.Radius
-			isIntersecting := distance-5 < sumRadius
+			isIntersecting := distance+3 < sumRadius
 			if isIntersecting {
 				// wimpy collision resolution
-				resolve := func(x1, x2 Transform_s) Vector {
+				resolve := func(x1, x2 o.Transform_s) v.Vector {
 					fromx1tox2 := x2.Position.Sub(x1.Position)
 					proj := x1.Velocity.Projection(fromx1tox2)
 					rej := x1.Velocity.Rejection(fromx1tox2)
@@ -152,13 +232,13 @@ func update() {
 }
 
 func render() {
-	WINDOW.Clear(palette.BLACK)
+	WINDOW.Clear(p.BLACK)
 
 	// get camera
-	var camera Vector = PLAYER.Transform.Position.Add(CAMERA_OFFSET)
+	var camera v.Vector = PLAYER.Transform.Position.Add(CAMERA_OFFSET)
 
 	// render player boundary
-	boundaryCenterPosition := getFramedPosition(camera, NewZeroVector())
+	boundaryCenterPosition := getFramedPosition(camera, v.NewZeroVector())
 	c, err := sf.NewCircleShape()
 	if err != nil {
 		panic(err)
@@ -168,21 +248,21 @@ func render() {
 	c.SetRadius(pb)
 	c.SetOrigin(sf.Vector2f{pb, pb})
 	c.SetOutlineThickness(5)
-	c.SetOutlineColor(palette.WHITE)
-	c.SetFillColor(palette.TRANSPARENT)
+	c.SetOutlineColor(p.WHITE)
+	c.SetFillColor(p.TRANSPARENT)
 	WINDOW.Draw(c, sf.DefaultRenderStates())
 
 	// display player
 	framedPlayerPosition := getFramedPosition(camera, PLAYER.Transform.Position)
-	playerCircleShape := GetCircleShape(PLAYER.Circle, PLAYER.RenderProperties)
+	playerCircleShape := o.GetCircleShape(PLAYER.Circle, PLAYER.RenderProperties)
 	playerCircleShape.SetPosition(framedPlayerPosition.ToSFMLVector2f())
 	WINDOW.Draw(playerCircleShape, sf.DefaultRenderStates())
 
 	// display asteroids
 	for e := ASTEROIDS.Front(); e != nil; e = e.Next() {
-		asteroid := e.Value.(*Asteroid_s)
+		asteroid := e.Value.(*o.Asteroid_s)
 		framedAsteroidPosition := getFramedPosition(camera, asteroid.Transform.Position)
-		asteroidCircleShape := GetCircleShape(asteroid.Circle, asteroid.RenderProperties)
+		asteroidCircleShape := o.GetCircleShape(asteroid.Circle, asteroid.RenderProperties)
 		asteroidCircleShape.SetPosition(framedAsteroidPosition.ToSFMLVector2f())
 		WINDOW.Draw(asteroidCircleShape, sf.DefaultRenderStates())
 	}

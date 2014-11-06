@@ -7,6 +7,15 @@ import (
 	. "bitbucket.org/kvu787/boost/lib/vector"
 )
 
+func listAny(l *list.List, f func(interface{}) bool) bool {
+	for e := l.Front(); e != nil; e = e.Next() {
+		if f(e.Value) {
+			return true
+		}
+	}
+	return false
+}
+
 func listNew(elements ...interface{}) *list.List {
 	result := list.New()
 	for _, e := range elements {
