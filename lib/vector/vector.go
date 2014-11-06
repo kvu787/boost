@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math"
 
-	. "bitbucket.org/kvu787/boost/lib/angle"
-
 	sf "bitbucket.org/kvu787/gosfml2"
 )
 
@@ -21,13 +19,17 @@ type Vector interface {
 	Div(n float64) Vector
 	GetMagnitude() float64
 	SetMagnitude(magnitude float64)
-	GetAngle() Angle
-	SetAngle(angle Angle)
+	GetAngle() float64
+	SetAngle(angle float64)
 	ToSFMLVector2f() sf.Vector2f
 }
 
 type vectorStruct struct {
 	x, y float64
+}
+
+func DegreesToRadians(degrees uint) float64 {
+	return (float64(degrees) / 360.0) * 2 * math.Pi
 }
 
 func NewZeroVector() Vector {
@@ -38,7 +40,7 @@ func NewCartesian(x, y float64) Vector {
 	return &vectorStruct{x, y}
 }
 
-func NewPolar(magnitude float64, angle Angle) Vector {
+func NewPolar(magnitude float64, angle float64) Vector {
 	v := NewCartesian(0, 0)
 	v.SetMagnitude(magnitude)
 	v.SetAngle(angle)
@@ -70,25 +72,25 @@ func (v vectorStruct) GetMagnitude() float64 { return math.Sqrt(v.GetX()*v.GetX(
 
 func (v *vectorStruct) SetMagnitude(magnitude float64) {
 	angle := v.GetAngle()
-	v.x = math.Cos(angle.GetRadians()) * magnitude
-	v.y = math.Sin(angle.GetRadians()) * magnitude
+	v.x = math.Cos(angle) * magnitude
+	v.y = math.Sin(angle) * magnitude
 }
 
-func (v vectorStruct) GetAngle() Angle {
-	return NewRadians(math.Atan2(v.GetY(), v.GetX()))
+func (v vectorStruct) GetAngle() float64 {
+	return math.Atan2(v.GetY(), v.GetX())
 }
 
-func (v *vectorStruct) SetAngle(angle Angle) {
+func (v *vectorStruct) SetAngle(angle float64) {
 	magnitude := v.GetMagnitude()
-	v.x = math.Cos(angle.GetRadians()) * magnitude
-	v.y = math.Sin(angle.GetRadians()) * magnitude
+	v.x = math.Cos(angle) * magnitude
+	v.y = math.Sin(angle) * magnitude
 }
 
 func (v vectorStruct) Distance(other Vector) float64 {
 	return v.Sub(other).GetMagnitude()
 }
 
-func (v *vectorStruct) Direction(other Vector) Angle {
+func (v *vectorStruct) Direction(other Vector) float64 {
 	return (other.Sub(v)).GetAngle()
 }
 

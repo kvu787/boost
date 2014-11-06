@@ -1,44 +1,56 @@
 package main
 
 import (
+	. "bitbucket.org/kvu787/boost/objects"
 	"container/list"
+	"time"
 
-	. "bitbucket.org/kvu787/boost/lib/angle"
 	"bitbucket.org/kvu787/boost/lib/palette"
 	. "bitbucket.org/kvu787/boost/lib/vector"
 
 	sf "bitbucket.org/kvu787/gosfml2"
 )
 
-var (
-	WINDOW         *sf.RenderWindow = nil
-	INPUT          *input_s         = &input_s{false, nil}
-	GAME_OBJECTS   *list.List       = list.New()
-	ASTEROID_COUNT uint             = 3
+const (
+	WINDOW_SIZE_X         uint    = 1000
+	WINDOW_SIZE_Y         uint    = 720
+	FPS                   uint    = 65
+	ASTEROID_LIMIT        uint    = 40
+	PLAYER_BOUNDARY       float64 = 350
+	SPAWN_BOUNDARY        float64 = 500
+	PLAYER_RESET_DISTANCE float64 = 3
 )
 
-func init() {
-	pushFrontAll(GAME_OBJECTS,
-		&camera_s{NewZeroVector()},
-		&player_s{
-			transform_s{NewZeroVector(), NewZeroVector(), NewZeroVector()},
-			circle_s{5, 0, 0, palette.BLUE, palette.WHITE},
-		},
-		&asteroid_s{
-			transform_s{NewCartesian(50, -50), NewPolar(50, NewDegrees(-20)), NewZeroVector()},
-			circle_s{20, 0, 0, palette.LIGHT_GRAY, palette.WHITE},
-			false,
-		},
-		&asteroid_s{
-			transform_s{NewCartesian(0, -100), NewPolar(70, NewDegrees(160)), NewZeroVector()},
-			circle_s{20, 0, 0, palette.GRAY, palette.WHITE},
-			false,
-		},
-	)
-}
+var (
+	WINDOW             *sf.RenderWindow = nil
+	DURATION_PER_FRAME time.Duration    = time.Duration(int64(time.Second) / int64(FPS))
+	CAMERA_OFFSET      Vector           = NewZeroVector()
+	INPUT              *Input_s         = &Input_s{false, nil}
 
-func pushFrontAll(l *list.List, objects ...interface{}) {
-	for _, object := range objects {
-		l.PushFront(object)
-	}
-}
+	PLAYER *Player_s = &Player_s{
+		Transform_s{
+			NewZeroVector(),
+			NewZeroVector(),
+			NewZeroVector(),
+		},
+		Circle_s{10},
+		RenderProperties_s{0, 0, palette.BLUE, palette.WHITE}}
+
+	ASTEROIDS *list.List = listNew(
+		&Asteroid_s{
+			Transform_s{
+				NewPolar(30, 0),
+				NewZeroVector(),
+				NewZeroVector(),
+			},
+			Circle_s{20},
+			RenderProperties_s{0, 0, palette.LIGHT_GRAY, palette.WHITE}},
+		&Asteroid_s{
+			Transform_s{
+				NewPolar(50, DegreesToRadians(200)),
+				NewPolar(5, DegreesToRadians(20)),
+				NewZeroVector(),
+			},
+			Circle_s{15},
+			RenderProperties_s{0, 0, palette.GRAY, palette.WHITE}})
+)

@@ -2,23 +2,27 @@ package main
 
 import (
 	"container/list"
+	"fmt"
+
+	. "bitbucket.org/kvu787/boost/lib/vector"
 )
 
-func listWhere(lst *list.List, tag int) interface{} {
-	for e := lst.Front(); e != nil; e = e.Next() {
-		if e.Value.(Tagged).Tag() == tag {
-			return e.Value
-		}
-	}
-	return nil
-}
-
-func listSelect(lst *list.List, tag int) *list.List {
+func listNew(elements ...interface{}) *list.List {
 	result := list.New()
-	for e := lst.Front(); e != nil; e = e.Next() {
-		if e.Value.(Tagged).Tag() == tag {
-			result.PushBack(e.Value)
-		}
+	for _, e := range elements {
+		fmt.Println(e)
+		result.PushBack(e)
 	}
 	return result
+}
+
+func pushFrontAll(l *list.List, objects ...interface{}) {
+	for _, object := range objects {
+		l.PushFront(object)
+	}
+}
+
+func getFramedPosition(camera, x Vector) Vector {
+	frameTopLeftCorner := camera.Add(NewCartesian(-0.5*float64(WINDOW_SIZE_X), -0.5*float64(WINDOW_SIZE_Y)))
+	return x.Sub(frameTopLeftCorner)
 }
