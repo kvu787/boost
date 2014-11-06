@@ -26,7 +26,7 @@ func main() {
 	// setup game variables
 	setupGameVariables()
 
-	spawnInitialAsteroids(100)
+	spawnInitialAsteroids(ASTEROID_INITIAL_SPAWN_COUNT)
 
 	// main loop
 	for WINDOW.IsOpen() {
@@ -39,7 +39,10 @@ func main() {
 		render() // write to WINDOW
 
 		// sleep if frametime is short
-		time.Sleep(time.Duration(int64(durationPerFrame) - int64(time.Since(startTime))))
+		frametime := time.Since(startTime)
+		framerate := 1.0 / frametime.Seconds()
+		time.Sleep(time.Duration(int64(durationPerFrame) - int64(frametime)))
+		fmt.Println("framerate: ", framerate)
 	}
 }
 
@@ -187,7 +190,7 @@ func update() {
 		PLAYER.Transform.Acceleration = v.NewZeroVector()
 
 		PLAYER.Transform.Velocity = v.NewPolar(
-			PLAYER_RESET_VELCOITY,
+			PLAYER_RESET_VELOCITY,
 			PLAYER.Transform.Position.GetAngle()+math.Pi)
 	}
 
@@ -212,23 +215,39 @@ func update() {
 			a1 := e1.Value.(*o.Asteroid_s)
 			a2 := e2.Value.(*o.Asteroid_s)
 
-			distance := a1.Transform.Position.Sub(a2.Transform.Position).GetMagnitude()
-			sumRadius := a1.Circle.Radius + a2.Circle.Radius
-			isIntersecting := distance+3 < sumRadius
+			isIntersecting := o.AreCirclesIntersecting(
+				a1.GetCircleShape(),
+				a2.GetCircleShape(),
+				3)
+
 			if isIntersecting {
 				// wimpy collision resolution
-				resolve := func(x1, x2 o.Transform_s) v.Vector {
-					fromx1tox2 := x2.Position.Sub(x1.Position)
-					proj := x1.Velocity.Projection(fromx1tox2)
-					rej := x1.Velocity.Rejection(fromx1tox2)
-					proj = proj.Mul(-1)
-					return proj.Add(rej)
-				}
-				a1.Transform.Velocity = resolve(a1.Transform, a2.Transform)
-				a2.Transform.Velocity = resolve(a2.Transform, a1.Transform)
+				a1.Transform.Velocity, a2.Transform.Velocity = resolveCollision(a1.Transform, a2.Transform)
 			}
 		}
+
+		// collide player
+		a := e1.Value.(*o.Asteroid_s)
+		isIntersecting := o.AreCirclesIntersecting(a.GetCircleShape(), PLAYER.GetCircleShape(), 1)
+		if isIntersecting {
+			PLAYER.Transform.Velocity, _ = resolveCollision(PLAYER.Transform, a.Transform)
+			PLAYER.Transform.Velocity.SetMagnitude(ASTEROID_BOUNCE_BACK_VELOCITY)
+			temp := PLAYER.Transform.Position.Sub(a.Transform.Position)
+			temp.SetMagnitude(a.Circle.Radius + PLAYER.Circle.Radius + 1)
+			PLAYER.Transform.Position = a.Transform.Position.Add(temp)
+		}
 	}
+}
+
+func resolveCollision(t1, t2 o.Transform_s) (v.Vector, v.Vector) {
+	resolve := func(x1, x2 o.Transform_s) v.Vector {
+		fromx1tox2 := x2.Position.Sub(x1.Position)
+		proj := x1.Velocity.Projection(fromx1tox2)
+		rej := x1.Velocity.Rejection(fromx1tox2)
+		proj = proj.Mul(-1)
+		return proj.Add(rej)
+	}
+	return resolve(t1, t2), resolve(t2, t1)
 }
 
 func render() {

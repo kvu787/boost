@@ -5,3 +5,7 @@ type Asteroid_s struct {
 	Circle           Circle_s
 	RenderProperties RenderProperties_s
 }
+
+func (a Asteroid_s) GetCircleShape() CircleShape_s {
+	return CircleShape_s{a.Transform, a.Circle}
+}
