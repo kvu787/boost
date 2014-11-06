@@ -36,21 +36,5 @@ var (
 		Circle_s{10},
 		RenderProperties_s{0, 0, palette.BLUE, palette.WHITE}}
 
-	ASTEROIDS *list.List = listNew(
-		&Asteroid_s{
-			Transform_s{
-				NewPolar(30, 0),
-				NewZeroVector(),
-				NewZeroVector(),
-			},
-			Circle_s{20},
-			RenderProperties_s{0, 0, palette.LIGHT_GRAY, palette.WHITE}},
-		&Asteroid_s{
-			Transform_s{
-				NewPolar(150, DegreesToRadians(240)),
-				NewPolar(60, DegreesToRadians(60)),
-				NewZeroVector(),
-			},
-			Circle_s{15},
-			RenderProperties_s{0, 0, palette.GRAY, palette.WHITE}})
+	ASTEROIDS *list.List = list.New()
 )

@@ -96,9 +96,9 @@ func update() {
 		camera := PLAYER.Transform.Position.Add(CAMERA_OFFSET)
 		framedPlayerPosition := getFramedPosition(camera, PLAYER.Transform.Position)
 		acceleration := framedPlayerPosition.Sub(INPUT.MousePosition)
-		PLAYER.Transform.Velocity = acceleration
+		PLAYER.Transform.Acceleration = acceleration
 	} else {
-		PLAYER.Transform.Velocity = NewZeroVector()
+		PLAYER.Transform.Acceleration = NewZeroVector()
 	}
 
 	// update player transform
@@ -136,7 +136,7 @@ func update() {
 
 			distance := a1.Transform.Position.Sub(a2.Transform.Position).GetMagnitude()
 			sumRadius := a1.Circle.Radius + a2.Circle.Radius
-			isIntersecting := distance+3 < sumRadius
+			isIntersecting := distance-5 < sumRadius
 			if isIntersecting {
 
 				// wimpy collision resolution
