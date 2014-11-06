@@ -25,6 +25,16 @@ func AreCirclesIntersecting(c1 CircleShape_s, c2 CircleShape_s, offset float64) 
 	return distance+offset < radiusSum
 }
 
+func AreCircleSegmentIntersecting(s Segment_s, c CircleShape_s) bool {
+	a := s.End1.Sub(s.End2)
+	b := c.Position.Sub(s.End1)
+	r := b.Rejection(a)
+	closestPointOnSegment := s.End1.Add(r)
+	onLine := (closestPointOnSegment.GetX() < s.End1.GetX()) != (closestPointOnSegment.GetX() < s.End2.GetX())
+	closeEnough := c.Radius > c.Position.Sub(closestPointOnSegment).GetMagnitude()
+	return onLine && closeEnough
+}
+
 func GetCircleOverlap(c1 CircleShape_s, c2 CircleShape_s) float64 {
 	sumRadius := c1.Radius + c2.Radius
 	distance := c1.Position.Sub(c2.Position).GetMagnitude()

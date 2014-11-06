@@ -1,11 +1,11 @@
 package objects
 
 type Asteroid_s struct {
-	Transform        Transform_s
-	Circle           Circle_s
-	RenderProperties RenderProperties_s
+	Transform_s
+	Circle_s
+	RenderProperties_s
 }
 
 func (a Asteroid_s) GetCircleShape() CircleShape_s {
-	return CircleShape_s{a.Transform, a.Circle}
+	return CircleShape_s{a.Transform_s, a.Circle_s}
 }

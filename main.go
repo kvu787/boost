@@ -98,12 +98,12 @@ func spawnInitialAsteroids(n uint) {
 			// generate random position
 			magnitude := float64(SPAWN_BOUNDARY) * rand.Float64()
 			angle := 2 * math.Pi * rand.Float64()
-			newAsteroid.Transform.Position = v.NewPolar(magnitude, angle)
+			newAsteroid.Position = v.NewPolar(magnitude, angle)
 
 			// check intersection with player
 			if o.AreCirclesIntersecting(
-				o.CircleShape_s{PLAYER.Transform, PLAYER.Circle},
-				o.CircleShape_s{newAsteroid.Transform, newAsteroid.Circle}, -100) {
+				o.CircleShape_s{PLAYER.Transform_s, PLAYER.Circle_s},
+				o.CircleShape_s{newAsteroid.Transform_s, newAsteroid.Circle_s}, -100) {
 				continue
 			}
 
@@ -111,8 +111,8 @@ func spawnInitialAsteroids(n uint) {
 			isIntersectingWithOtherAsteroid := listAny(ASTEROIDS, func(i interface{}) bool {
 				a := i.(*o.Asteroid_s)
 				return o.AreCirclesIntersecting(
-					o.CircleShape_s{a.Transform, a.Circle},
-					o.CircleShape_s{newAsteroid.Transform, newAsteroid.Circle}, -5)
+					o.CircleShape_s{a.Transform_s, a.Circle_s},
+					o.CircleShape_s{newAsteroid.Transform_s, newAsteroid.Circle_s}, -5)
 			})
 			if isIntersectingWithOtherAsteroid {
 				continue
@@ -170,35 +170,35 @@ func update() {
 
 	// update player acceleration with user input
 	if INPUT.IsMousePressed {
-		camera := PLAYER.Transform.Position.Add(CAMERA_OFFSET)
-		framedPlayerPosition := getFramedPosition(camera, PLAYER.Transform.Position)
+		camera := PLAYER.Position.Add(CAMERA_OFFSET)
+		framedPlayerPosition := getFramedPosition(camera, PLAYER.Position)
 		acceleration := framedPlayerPosition.Sub(INPUT.MousePosition)
-		PLAYER.Transform.Acceleration = acceleration.Mul(SENSITIVITY)
+		PLAYER.Acceleration = acceleration.Mul(SENSITIVITY)
 	} else {
-		PLAYER.Transform.Acceleration = v.NewZeroVector()
+		PLAYER.Acceleration = v.NewZeroVector()
 	}
 
 	// update player transform
-	PLAYER.Transform = PLAYER.Transform.Act(DURATION_PER_FRAME)
+	PLAYER.Transform_s = PLAYER.Transform_s.Act(DURATION_PER_FRAME)
 
 	// check if player is out of bounds
-	if PLAYER.Transform.Position.GetMagnitude() >= float64(PLAYER_BOUNDARY) {
-		PLAYER.Transform.Position = v.NewPolar(
+	if PLAYER.Position.GetMagnitude() >= float64(PLAYER_BOUNDARY) {
+		PLAYER.Position = v.NewPolar(
 			float64(PLAYER_BOUNDARY-PLAYER_RESET_DISTANCE),
-			PLAYER.Transform.Position.GetAngle())
+			PLAYER.Position.GetAngle())
 
-		PLAYER.Transform.Acceleration = v.NewZeroVector()
+		PLAYER.Acceleration = v.NewZeroVector()
 
-		PLAYER.Transform.Velocity = v.NewPolar(
+		PLAYER.Velocity = v.NewPolar(
 			PLAYER_RESET_VELOCITY,
-			PLAYER.Transform.Position.GetAngle()+math.Pi)
+			PLAYER.Position.GetAngle()+math.Pi)
 	}
 
 	// remove asteroids that are out of bounds
 	for e, next := ASTEROIDS.Front(), new(list.Element); e != nil; e = next {
 		next = e.Next()
 		asteroid := e.Value.(*o.Asteroid_s)
-		if asteroid.Transform.Position.GetMagnitude() > SPAWN_BOUNDARY {
+		if asteroid.Position.GetMagnitude() > SPAWN_BOUNDARY {
 			ASTEROIDS.Remove(e)
 		}
 	}
@@ -206,7 +206,7 @@ func update() {
 	// update asteroid transforms
 	for e := ASTEROIDS.Front(); e != nil; e = e.Next() {
 		asteroid := e.Value.(*o.Asteroid_s)
-		asteroid.Transform = asteroid.Transform.Act(DURATION_PER_FRAME)
+		asteroid.Transform_s = asteroid.Transform_s.Act(DURATION_PER_FRAME)
 	}
 
 	// collide asteroids
@@ -222,15 +222,15 @@ func update() {
 
 			if isIntersecting {
 				// wimpy collision resolution
-				a1.Transform.Velocity, a2.Transform.Velocity = resolveCollisionVelocities(a1.Transform, a2.Transform)
+				a1.Velocity, a2.Velocity = resolveCollisionVelocities(a1.Transform_s, a2.Transform_s)
 
 				// separate asteroids
 				overlap := o.GetCircleOverlap(a1.GetCircleShape(), a2.GetCircleShape()) + 2
-				displacement := a2.Transform.Position.Sub(a1.Transform.Position)
+				displacement := a2.Position.Sub(a1.Position)
 				displacement.SetMagnitude(overlap / 2)
-				a2.Transform.Position = a2.Transform.Position.Add(displacement)
+				a2.Position = a2.Position.Add(displacement)
 				displacement = displacement.Mul(-1)
-				a1.Transform.Position = a1.Transform.Position.Add(displacement)
+				a1.Position = a1.Position.Add(displacement)
 			}
 		}
 
@@ -238,11 +238,11 @@ func update() {
 		a := e1.Value.(*o.Asteroid_s)
 		isIntersecting := o.AreCirclesIntersecting(a.GetCircleShape(), PLAYER.GetCircleShape(), 1)
 		if isIntersecting {
-			PLAYER.Transform.Velocity, _ = resolveCollisionVelocities(PLAYER.Transform, a.Transform)
-			PLAYER.Transform.Velocity.SetMagnitude(ASTEROID_BOUNCE_BACK_VELOCITY)
-			temp := PLAYER.Transform.Position.Sub(a.Transform.Position)
-			temp.SetMagnitude(a.Circle.Radius + PLAYER.Circle.Radius + 1)
-			PLAYER.Transform.Position = a.Transform.Position.Add(temp)
+			PLAYER.Velocity, _ = resolveCollisionVelocities(PLAYER.Transform_s, a.Transform_s)
+			PLAYER.Velocity.SetMagnitude(ASTEROID_BOUNCE_BACK_VELOCITY)
+			temp := PLAYER.Position.Sub(a.Position)
+			temp.SetMagnitude(a.Radius + PLAYER.Radius + 1)
+			PLAYER.Position = a.Position.Add(temp)
 		}
 	}
 }
@@ -262,7 +262,7 @@ func render() {
 	WINDOW.Clear(p.BLACK)
 
 	// get camera
-	var camera v.Vector = PLAYER.Transform.Position.Add(CAMERA_OFFSET)
+	var camera v.Vector = PLAYER.Position.Add(CAMERA_OFFSET)
 
 	// render player boundary
 	boundaryCenterPosition := getFramedPosition(camera, v.NewZeroVector())
@@ -280,16 +280,16 @@ func render() {
 	WINDOW.Draw(c, sf.DefaultRenderStates())
 
 	// display player
-	framedPlayerPosition := getFramedPosition(camera, PLAYER.Transform.Position)
-	playerCircleShape := o.GetCircleShape(PLAYER.Circle, PLAYER.RenderProperties)
+	framedPlayerPosition := getFramedPosition(camera, PLAYER.Position)
+	playerCircleShape := o.GetCircleShape(PLAYER.Circle_s, PLAYER.RenderProperties_s)
 	playerCircleShape.SetPosition(framedPlayerPosition.ToSFMLVector2f())
 	WINDOW.Draw(playerCircleShape, sf.DefaultRenderStates())
 
 	// display asteroids
 	for e := ASTEROIDS.Front(); e != nil; e = e.Next() {
 		asteroid := e.Value.(*o.Asteroid_s)
-		framedAsteroidPosition := getFramedPosition(camera, asteroid.Transform.Position)
-		asteroidCircleShape := o.GetCircleShape(asteroid.Circle, asteroid.RenderProperties)
+		framedAsteroidPosition := getFramedPosition(camera, asteroid.Position)
+		asteroidCircleShape := o.GetCircleShape(asteroid.Circle_s, asteroid.RenderProperties_s)
 		asteroidCircleShape.SetPosition(framedAsteroidPosition.ToSFMLVector2f())
 		WINDOW.Draw(asteroidCircleShape, sf.DefaultRenderStates())
 	}
