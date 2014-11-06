@@ -24,3 +24,9 @@ func AreCirclesIntersecting(c1 CircleShape_s, c2 CircleShape_s, offset float64) 
 	radiusSum := c1.Circle_s.Radius + c2.Circle_s.Radius
 	return distance+offset < radiusSum
 }
+
+func GetCircleOverlap(c1 CircleShape_s, c2 CircleShape_s) float64 {
+	sumRadius := c1.Radius + c2.Radius
+	distance := c1.Position.Sub(c2.Position).GetMagnitude()
+	return sumRadius - distance
+}

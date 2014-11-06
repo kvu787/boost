@@ -143,11 +143,11 @@ func input() {
 func update() {
 	fmt.Println("asteroids: ", ASTEROIDS.Len())
 	// spawn asteroid
-	if rand.Intn(30) == 0 {
+	if rand.Intn(int(ASTEROID_SPAWN_FREQUENCY)) == 0 {
 		color := ASTEROID_COLORS[rand.Intn(len(ASTEROID_COLORS))]
 		radian := v.DegreesToRadians(uint(rand.Intn(360)))
 		velocityMagnitude := rand.Float64()*(ASTEROID_MAX_VELOCITY-ASTEROID_MIN_VELOCITY) + ASTEROID_MIN_VELOCITY
-		velocityDegreeSpread := 30.0
+		velocityDegreeSpread := 20.0
 		radius := rand.Float64()*(ASTEROID_MAX_RADIUS-ASTEROID_MIN_RADIUS) + ASTEROID_MIN_RADIUS
 
 		position := v.NewPolar(SPAWN_BOUNDARY-10, radian)
@@ -222,7 +222,15 @@ func update() {
 
 			if isIntersecting {
 				// wimpy collision resolution
-				a1.Transform.Velocity, a2.Transform.Velocity = resolveCollision(a1.Transform, a2.Transform)
+				a1.Transform.Velocity, a2.Transform.Velocity = resolveCollisionVelocities(a1.Transform, a2.Transform)
+
+				// separate asteroids
+				overlap := o.GetCircleOverlap(a1.GetCircleShape(), a2.GetCircleShape()) + 2
+				displacement := a2.Transform.Position.Sub(a1.Transform.Position)
+				displacement.SetMagnitude(overlap / 2)
+				a2.Transform.Position = a2.Transform.Position.Add(displacement)
+				displacement = displacement.Mul(-1)
+				a1.Transform.Position = a1.Transform.Position.Add(displacement)
 			}
 		}
 
@@ -230,7 +238,7 @@ func update() {
 		a := e1.Value.(*o.Asteroid_s)
 		isIntersecting := o.AreCirclesIntersecting(a.GetCircleShape(), PLAYER.GetCircleShape(), 1)
 		if isIntersecting {
-			PLAYER.Transform.Velocity, _ = resolveCollision(PLAYER.Transform, a.Transform)
+			PLAYER.Transform.Velocity, _ = resolveCollisionVelocities(PLAYER.Transform, a.Transform)
 			PLAYER.Transform.Velocity.SetMagnitude(ASTEROID_BOUNCE_BACK_VELOCITY)
 			temp := PLAYER.Transform.Position.Sub(a.Transform.Position)
 			temp.SetMagnitude(a.Circle.Radius + PLAYER.Circle.Radius + 1)
@@ -239,7 +247,7 @@ func update() {
 	}
 }
 
-func resolveCollision(t1, t2 o.Transform_s) (v.Vector, v.Vector) {
+func resolveCollisionVelocities(t1, t2 o.Transform_s) (v.Vector, v.Vector) {
 	resolve := func(x1, x2 o.Transform_s) v.Vector {
 		fromx1tox2 := x2.Position.Sub(x1.Position)
 		proj := x1.Velocity.Projection(fromx1tox2)

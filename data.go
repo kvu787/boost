@@ -11,21 +11,21 @@ import (
 )
 
 const (
-	WINDOW_SIZE_X                 uint    = 1000
+	WINDOW_SIZE_X                 uint    = 720
 	WINDOW_SIZE_Y                 uint    = 720
 	FPS                           uint    = 65
 	ASTEROID_LIMIT                uint    = 40
 	PLAYER_BOUNDARY               float64 = 1000
-	SPAWN_BOUNDARY                float64 = 1200
+	SPAWN_BOUNDARY                float64 = 1400
 	PLAYER_RESET_DISTANCE         float64 = 3
 	PLAYER_RESET_VELOCITY         float64 = 200
-	ASTEROID_SPAWN_FREQUENCY      uint    = 20
+	ASTEROID_SPAWN_FREQUENCY      uint    = 3 // lower means more frequent
 	CAMERA_OFFSET_X               float64 = 0
 	CAMERA_OFFSET_Y               float64 = 0
 	ASTEROID_MIN_RADIUS           float64 = 30
 	ASTEROID_MAX_RADIUS           float64 = 100
 	ASTEROID_MIN_VELOCITY         float64 = 10
-	ASTEROID_MAX_VELOCITY         float64 = 300
+	ASTEROID_MAX_VELOCITY         float64 = 400
 	SENSITIVITY                   float64 = 2
 	ASTEROID_BOUNCE_BACK_VELOCITY float64 = 300
 	ASTEROID_INITIAL_SPAWN_COUNT  uint    = 50
