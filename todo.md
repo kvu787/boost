@@ -1,4 +1,3 @@
-- different color asteroids
 - player asteroid collision
 - implement slipstream
 	- When checking asteroid collisions

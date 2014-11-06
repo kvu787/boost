@@ -20,11 +20,9 @@ func main() {
 	durationPerFrame := time.Duration(int64(time.Second) / int64(FPS))
 
 	// setup
-	fmt.Println("Setting up window...")
 	setup()
 
 	// main loop
-	fmt.Println("Entering game loop...")
 	for WINDOW.IsOpen() {
 
 		// vsync
@@ -65,7 +63,6 @@ func input() {
 
 func update() {
 	fmt.Println(ASTEROIDS.Len())
-
 	// spawn asteroid
 	if rand.Intn(30) == 0 {
 		color := ASTEROID_COLORS[rand.Intn(len(ASTEROID_COLORS))]
@@ -114,7 +111,7 @@ func update() {
 		PLAYER.Transform.Velocity = NewZeroVector()
 	}
 
-	// check if asteroids are out of bounds
+	// remove asteroids that are out of bounds
 	for e, next := ASTEROIDS.Front(), new(list.Element); e != nil; e = next {
 		next = e.Next()
 		asteroid := e.Value.(*Asteroid_s)
@@ -139,7 +136,6 @@ func update() {
 			sumRadius := a1.Circle.Radius + a2.Circle.Radius
 			isIntersecting := distance-5 < sumRadius
 			if isIntersecting {
-
 				// wimpy collision resolution
 				resolve := func(x1, x2 Transform_s) Vector {
 					fromx1tox2 := x2.Position.Sub(x1.Position)

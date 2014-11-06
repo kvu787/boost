@@ -12,13 +12,14 @@ import (
 )
 
 const (
-	WINDOW_SIZE_X         uint    = 1000
-	WINDOW_SIZE_Y         uint    = 720
-	FPS                   uint    = 65
-	ASTEROID_LIMIT        uint    = 40
-	PLAYER_BOUNDARY       float64 = 1000
-	SPAWN_BOUNDARY        float64 = 1800
-	PLAYER_RESET_DISTANCE float64 = 3
+	WINDOW_SIZE_X            uint    = 1000
+	WINDOW_SIZE_Y            uint    = 720
+	FPS                      uint    = 65
+	ASTEROID_LIMIT           uint    = 40
+	PLAYER_BOUNDARY          float64 = 1000
+	SPAWN_BOUNDARY           float64 = 1800
+	PLAYER_RESET_DISTANCE    float64 = 3
+	ASTEROID_SPAWN_FREQUENCY uint    = 30
 )
 
 var (
