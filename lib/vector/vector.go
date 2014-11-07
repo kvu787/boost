@@ -19,8 +19,8 @@ type Vector interface {
 	Div(n float64) Vector
 
 	Dot(other Vector) float64
-	Projection(other Vector) Vector
-	Rejection(other Vector) Vector
+	Projection(other Vector) Vector // parallel to other
+	Rejection(other Vector) Vector  // perpendicular to other
 
 	SetMagnitude(magnitude float64)
 	SetAngle(angle float64)
@@ -33,6 +33,10 @@ type Vector interface {
 
 type vectorStruct struct {
 	x, y float64
+}
+
+func RadiansToDegrees(radians float64) float64 {
+	return (radians / (2.0 * math.Pi)) * 360.0
 }
 
 func DegreesToRadians(degrees uint) float64 {

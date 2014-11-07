@@ -26,10 +26,10 @@ func AreCirclesIntersecting(c1 CircleShape_s, c2 CircleShape_s, offset float64) 
 }
 
 func AreCircleSegmentIntersecting(s Segment_s, c CircleShape_s) bool {
-	a := s.End1.Sub(s.End2)
+	a := s.End2.Sub(s.End1)
 	b := c.Position.Sub(s.End1)
-	r := b.Rejection(a)
-	closestPointOnSegment := s.End1.Add(r)
+	p := b.Projection(a)
+	closestPointOnSegment := s.End1.Add(p)
 	onLine := (closestPointOnSegment.GetX() < s.End1.GetX()) != (closestPointOnSegment.GetX() < s.End2.GetX())
 	closeEnough := c.Radius > c.Position.Sub(closestPointOnSegment).GetMagnitude()
 	return onLine && closeEnough

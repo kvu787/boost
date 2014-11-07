@@ -1,11 +1,11 @@
 package main
 
 import (
-	. "bitbucket.org/kvu787/boost/objects"
 	"container/list"
 	"time"
 
 	. "bitbucket.org/kvu787/boost/lib/vector"
+	. "bitbucket.org/kvu787/boost/objects"
 
 	sf "bitbucket.org/kvu787/gosfml2"
 )
@@ -28,15 +28,25 @@ const (
 	ASTEROID_MAX_VELOCITY         float64 = 400
 	SENSITIVITY                   float64 = 2
 	ASTEROID_BOUNCE_BACK_VELOCITY float64 = 300
-	ASTEROID_INITIAL_SPAWN_COUNT  uint    = 50
+	ASTEROID_INITIAL_SPAWN_COUNT  uint    = 100
+	SHOULD_SPAWN_ASTEROIDS        bool    = true
+	LIGHT_SPAWN_DURATION          uint    = 1337
+	SLIP_WIDTH_SCALING            float64 = 45000 // higher means wider
+	MAX_BOOST                     float64 = 100
+	BOOST_REGENERATION            float64 = 100
+	BOOST_BURN                    float64 = 100
+	SLIP_DURATION                 float64 = 4
 )
 
 var (
-	WINDOW             *sf.RenderWindow
-	DURATION_PER_FRAME time.Duration
-	CAMERA_OFFSET      Vector
-	INPUT              *Input_s
-	PLAYER             *Player_s
-	ASTEROIDS          *list.List
-	ASTEROID_COLORS    []sf.Color
+	WINDOW                *sf.RenderWindow
+	DURATION_PER_FRAME    time.Duration
+	CAMERA_OFFSET         Vector
+	INPUT                 *Input_s
+	PLAYER                *Player_s
+	ASTEROIDS             *list.List
+	ASTEROID_COLORS       []sf.Color
+	SLIPS                 *list.List
+	WINDOW_DIAGNOL_LENGTH float64
+	CURRENT_BOOST         float64
 )

@@ -2,6 +2,7 @@ package palette
 
 import (
 	sf "bitbucket.org/kvu787/gosfml2"
+	"math/rand"
 )
 
 var (
@@ -19,3 +20,11 @@ var (
 	DARK_BROWN  sf.Color = sf.Color{94, 47, 0, 255}
 	TRANSPARENT sf.Color = sf.Color{0, 0, 0, 0}
 )
+
+func RandomColor() sf.Color {
+	return sf.Color{
+		uint8(rand.Int31n(256)),
+		uint8(rand.Int31n(256)),
+		uint8(rand.Int31n(256)),
+		0}
+}
