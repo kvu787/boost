@@ -18,13 +18,13 @@ const (
 	SPAWN_BOUNDARY  float64 = 1400
 
 	SHOULD_SPAWN_ASTEROIDS        bool    = true
-	ASTEROID_SPAWN_FREQUENCY      uint    = 3 // lower means more frequent
+	ASTEROID_SPAWN_FREQUENCY      uint    = 4 // lower means more frequent
 	ASTEROID_MIN_RADIUS           float64 = 30
 	ASTEROID_MAX_RADIUS           float64 = 100
-	ASTEROID_MIN_VELOCITY         float64 = 10
-	ASTEROID_MAX_VELOCITY         float64 = 400
-	ASTEROID_BOUNCE_BACK_VELOCITY float64 = 50
-	ASTEROID_INITIAL_SPAWN_COUNT  uint    = 50
+	ASTEROID_MIN_VELOCITY         float64 = 100
+	ASTEROID_MAX_VELOCITY         float64 = 150
+	ASTEROID_BOUNCE_BACK_VELOCITY float64 = 300
+	ASTEROID_INITIAL_SPAWN_COUNT  uint    = 45
 
 	SLIP_WIDTH_SCALING   float64 = 4500 // higher means wider
 	MAX_BOOST            float64 = 100
@@ -32,11 +32,12 @@ const (
 	BOOST_REGENERATION   float64 = 100
 	BOOST_BURN           float64 = 100
 	SLIP_DURATION        float64 = 4
+	MAX_SLIP_WIDTH       float64 = 300
 
 	PLAYER_RESET_DISTANCE   float64 = 3
 	PLAYER_RESET_VELOCITY   float64 = 200
-	PLAYER_CONTROL_RADIUS   float64 = 300
-	PLAYER_MAX_ACCELERATION float64 = 700
+	PLAYER_CONTROL_RADIUS   float64 = 200
+	PLAYER_MAX_ACCELERATION float64 = 1500
 )
 
 // variables that should be immutable

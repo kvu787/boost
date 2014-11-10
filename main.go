@@ -194,16 +194,15 @@ func update() {
 
 	// update camera shift
 	func() {
-		// f := polynomial(2, 200, 400)
 		frameCenter := v.NewCartesian((float64(WINDOW_SIZE_X))/2.0, (float64(WINDOW_SIZE_Y))/2.0)
 		centerMouseDisplacement := INPUT.MousePosition.Sub(frameCenter)
 		shiftFromMovement := centerMouseDisplacement.Mul(-0.2)
-		shiftFromAcceleration := centerMouseDisplacement.Mul(0.3)
+		// shiftFromAcceleration := centerMouseDisplacement.Mul(0.3)
 
 		goalCameraShift := shiftFromMovement
-		if INPUT.IsMousePressed {
-			goalCameraShift = goalCameraShift.Add(shiftFromAcceleration)
-		}
+		// if INPUT.IsMousePressed {
+		// 	goalCameraShift = goalCameraShift.Add(shiftFromAcceleration)
+		// }
 		diff := goalCameraShift.Sub(CAMERA_SHIFT)
 		CAMERA_SHIFT = CAMERA_SHIFT.Add(diff.Mul(0.1))
 	}()
@@ -268,7 +267,7 @@ func update() {
 			} else {
 				// check slip
 				segment := o.Segment_s{a1.Position, a2.Position}
-				if segment.GetLength()-a1.Radius-a2.Radius < 200 || LIGHT_SPAWN_DURATION == 1337 {
+				if segment.GetLength()-a1.Radius-a2.Radius < MAX_SLIP_WIDTH || LIGHT_SPAWN_DURATION == 1337 {
 					if o.AreCircleSegmentIntersecting(segment, PLAYER.GetCircleShape()) {
 						width := SLIP_WIDTH_SCALING / segment.GetLength()
 
@@ -313,6 +312,43 @@ func render() {
 
 	// update the frame with respect to player position
 	FRAME = PLAYER.Position.Add(v.NewCartesian((float64(WINDOW_SIZE_X))/-2.0, (float64(WINDOW_SIZE_Y))/-2.0)).Add(CAMERA_SHIFT)
+
+	// render grid lines
+	func() {
+		density := 150
+		width := 2.0
+		c := p.WHITE
+		c.A = 70
+		// vertical
+		for i := 0; i <= int(SPAWN_BOUNDARY)*2; i += density {
+			fmt.Println(i)
+			r, err := sf.NewRectangleShape()
+			if err != nil {
+				panic(err)
+			}
+			r.SetRotation(90)
+			r.SetSize(v.NewCartesian(SPAWN_BOUNDARY*2, width).ToSFMLVector2f())
+			// r.SetOrigin(v.NewCartesian(-SPAWN_BOUNDARY, width/2).ToSFMLVector2f())
+			r.SetPosition(worldToFramePosition(FRAME, v.NewCartesian(float64(i), 0)).Sub(v.NewCartesian(SPAWN_BOUNDARY, SPAWN_BOUNDARY)).ToSFMLVector2f())
+			r.SetOutlineThickness(0)
+			r.SetFillColor(c)
+			WINDOW.Draw(r, sf.DefaultRenderStates())
+		}
+		// horiz
+		for i := 0; i <= int(SPAWN_BOUNDARY)*2; i += density {
+			fmt.Println(i)
+			r, err := sf.NewRectangleShape()
+			if err != nil {
+				panic(err)
+			}
+			r.SetSize(v.NewCartesian(SPAWN_BOUNDARY*2, width).ToSFMLVector2f())
+			// r.SetOrigin(v.NewCartesian(-SPAWN_BOUNDARY, width/2).ToSFMLVector2f())
+			r.SetPosition(worldToFramePosition(FRAME, v.NewCartesian(0, float64(i))).Sub(v.NewCartesian(SPAWN_BOUNDARY, SPAWN_BOUNDARY)).ToSFMLVector2f())
+			r.SetOutlineThickness(0)
+			r.SetFillColor(c)
+			WINDOW.Draw(r, sf.DefaultRenderStates())
+		}
+	}()
 
 	// render player boundary
 	boundaryCenterPosition := worldToFramePosition(FRAME, v.NewZeroVector())
