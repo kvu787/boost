@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/list"
+	"fmt"
 	"math"
 	"math/rand"
 	"runtime"
@@ -56,8 +57,8 @@ func setupWindow() {
 func setupGameVariables() {
 	DURATION_PER_FRAME = time.Duration(int64(time.Second) / int64(FPS))
 	FRAME = v.NewCartesian((float64(WINDOW_SIZE_X))/-2.0, (float64(WINDOW_SIZE_Y))/-2.0)
-	CAMERA_OFFSET = v.NewZeroVector()
 	INPUT = &o.Input_s{false, nil}
+	CAMERA_SHIFT = v.NewZeroVector()
 
 	PLAYER = &o.Player_s{
 		o.Transform_s{
@@ -190,15 +191,16 @@ func update() {
 		PLAYER.Acceleration = v.NewZeroVector()
 	}
 
-	// // update camera shift
-	// if INPUT.IsMousePressed {
-	// 	vectorFromFrameCenter :=
-	// 		INPUT.MousePosition
-	// 	goalCameraShift := v.NewPolar(magnitude, angle)
-
-	// } else {
-	// 	CAMERA_OFFSET = NewZeroVector()
-	// }
+	// update camera shift
+	func() {
+		CAMERA_SHIFT = v.NewZeroVector()
+		worldMousePosition := frameToWorldPosition(FRAME, INPUT.MousePosition)
+		displacementPlayerToMouse := worldMousePosition.Sub(PLAYER.Position)
+		fmt.Println(displacementPlayerToMouse)
+		cameraGoal := displacementPlayerToMouse.Mul(-1)
+		cameraDifference := cameraGoal.Sub(CAMERA_SHIFT)
+		CAMERA_SHIFT = CAMERA_SHIFT.Add(cameraDifference)
+	}()
 
 	// update player transform
 	PLAYER.Transform_s = PLAYER.Transform_s.Act(DURATION_PER_FRAME)
@@ -304,7 +306,7 @@ func render() {
 	WINDOW.Clear(p.BLACK)
 
 	// update the frame with respect to player position
-	FRAME = PLAYER.Position.Add(v.NewCartesian((float64(WINDOW_SIZE_X))/-2.0, (float64(WINDOW_SIZE_Y))/-2.0))
+	FRAME = PLAYER.Position.Add(v.NewCartesian((float64(WINDOW_SIZE_X))/-2.0, (float64(WINDOW_SIZE_Y))/-2.0)).Add(CAMERA_SHIFT)
 
 	// render player boundary
 	boundaryCenterPosition := worldToFramePosition(FRAME, v.NewZeroVector())
