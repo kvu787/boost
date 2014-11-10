@@ -28,7 +28,7 @@ const (
 
 	SLIP_WIDTH_SCALING   float64 = 4500 // higher means wider
 	MAX_BOOST            float64 = 100
-	LIGHT_SPAWN_DURATION uint    = 1337
+	LIGHT_SPAWN_DURATION uint    = 200
 	BOOST_REGENERATION   float64 = 100
 	BOOST_BURN           float64 = 100
 	SLIP_DURATION        float64 = 4

@@ -29,6 +29,7 @@ func main() {
 	spawnInitialAsteroids(ASTEROID_INITIAL_SPAWN_COUNT)
 
 	// main loop
+	fmt.Println("hello my name is major tom")
 	for WINDOW.IsOpen() {
 
 		// vsync
@@ -193,13 +194,18 @@ func update() {
 
 	// update camera shift
 	func() {
-		CAMERA_SHIFT = v.NewZeroVector()
-		worldMousePosition := frameToWorldPosition(FRAME, INPUT.MousePosition)
-		displacementPlayerToMouse := worldMousePosition.Sub(PLAYER.Position)
-		fmt.Println(displacementPlayerToMouse)
-		cameraGoal := displacementPlayerToMouse.Mul(-1)
-		cameraDifference := cameraGoal.Sub(CAMERA_SHIFT)
-		CAMERA_SHIFT = CAMERA_SHIFT.Add(cameraDifference)
+		// f := polynomial(2, 200, 400)
+		frameCenter := v.NewCartesian((float64(WINDOW_SIZE_X))/2.0, (float64(WINDOW_SIZE_Y))/2.0)
+		centerMouseDisplacement := INPUT.MousePosition.Sub(frameCenter)
+		shiftFromMovement := centerMouseDisplacement.Mul(-0.2)
+		shiftFromAcceleration := centerMouseDisplacement.Mul(0.3)
+
+		goalCameraShift := shiftFromMovement
+		if INPUT.IsMousePressed {
+			goalCameraShift = goalCameraShift.Add(shiftFromAcceleration)
+		}
+		diff := goalCameraShift.Sub(CAMERA_SHIFT)
+		CAMERA_SHIFT = CAMERA_SHIFT.Add(diff.Mul(0.1))
 	}()
 
 	// update player transform
