@@ -6,5 +6,5 @@ import (
 
 type Input_s struct {
 	IsMousePressed bool
-	MousePosition  Vector
+	MousePosition  Vector // with respect to frame
 }

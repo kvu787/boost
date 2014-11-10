@@ -32,9 +32,12 @@ func pushFrontAll(l *list.List, objects ...interface{}) {
 	}
 }
 
-func getFramedPosition(camera, x Vector) Vector {
-	frameTopLeftCorner := camera.Add(NewCartesian(-0.5*float64(WINDOW_SIZE_X), -0.5*float64(WINDOW_SIZE_Y)))
-	return x.Sub(frameTopLeftCorner)
+func worldToFramePosition(frame, x Vector) Vector {
+	return x.Sub(frame)
+}
+
+func frameToWorldPosition(frame, x Vector) Vector {
+	return frame.Add(x)
 }
 
 func polynomial(exp, xScale, yScale float64) func(float64) float64 {

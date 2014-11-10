@@ -55,7 +55,8 @@ func setupWindow() {
 
 func setupGameVariables() {
 	DURATION_PER_FRAME = time.Duration(int64(time.Second) / int64(FPS))
-	CAMERA_OFFSET = v.NewCartesian(CAMERA_OFFSET_X, CAMERA_OFFSET_Y)
+	FRAME = v.NewCartesian((float64(WINDOW_SIZE_X))/-2.0, (float64(WINDOW_SIZE_Y))/-2.0)
+	CAMERA_OFFSET = v.NewZeroVector()
 	INPUT = &o.Input_s{false, nil}
 
 	PLAYER = &o.Player_s{
@@ -69,22 +70,6 @@ func setupGameVariables() {
 
 	ASTEROIDS = list.New()
 	SLIPS = list.New()
-
-	// pushFrontAll(ASTEROIDS,
-	// 	&o.Asteroid_s{
-	// 		o.Transform_s{
-	// 			v.NewCartesian(0, -100),
-	// 			v.NewZeroVector(),
-	// 			v.NewZeroVector()},
-	// 		o.Circle_s{50},
-	// 		o.RenderProperties_s{2, 0, p.WHITE, p.GRAY}},
-	// 	&o.Asteroid_s{
-	// 		o.Transform_s{
-	// 			v.NewCartesian(100, 0),
-	// 			v.NewZeroVector(),
-	// 			v.NewZeroVector()},
-	// 		o.Circle_s{50},
-	// 		o.RenderProperties_s{2, 0, p.WHITE, p.GRAY}})
 
 	ASTEROID_COLORS = []sf.Color{
 		p.LIGHT_GRAY,
@@ -195,9 +180,8 @@ func update() {
 
 	// update player acceleration
 	if INPUT.IsMousePressed {
-		camera := PLAYER.Position.Add(CAMERA_OFFSET)
-		framedPlayerPosition := getFramedPosition(camera, PLAYER.Position)
-		displacement := framedPlayerPosition.Sub(INPUT.MousePosition)
+		worldMousePosition := frameToWorldPosition(FRAME, INPUT.MousePosition)
+		displacement := PLAYER.Position.Sub(worldMousePosition)
 		acceleration := v.NewPolar(
 			PLAYER_ACCELERATION_CURVE(math.Min(displacement.GetMagnitude(), PLAYER_CONTROL_RADIUS)),
 			displacement.GetAngle())
@@ -205,6 +189,16 @@ func update() {
 	} else {
 		PLAYER.Acceleration = v.NewZeroVector()
 	}
+
+	// // update camera shift
+	// if INPUT.IsMousePressed {
+	// 	vectorFromFrameCenter :=
+	// 		INPUT.MousePosition
+	// 	goalCameraShift := v.NewPolar(magnitude, angle)
+
+	// } else {
+	// 	CAMERA_OFFSET = NewZeroVector()
+	// }
 
 	// update player transform
 	PLAYER.Transform_s = PLAYER.Transform_s.Act(DURATION_PER_FRAME)
@@ -309,11 +303,11 @@ func resolveCollisionVelocities(t1, t2 o.Transform_s) (v.Vector, v.Vector) {
 func render() {
 	WINDOW.Clear(p.BLACK)
 
-	// get camera
-	var camera v.Vector = PLAYER.Position.Add(CAMERA_OFFSET)
+	// update the frame with respect to player position
+	FRAME = PLAYER.Position.Add(v.NewCartesian((float64(WINDOW_SIZE_X))/-2.0, (float64(WINDOW_SIZE_Y))/-2.0))
 
 	// render player boundary
-	boundaryCenterPosition := getFramedPosition(camera, v.NewZeroVector())
+	boundaryCenterPosition := worldToFramePosition(FRAME, v.NewZeroVector())
 	c, err := sf.NewCircleShape()
 	if err != nil {
 		panic(err)
@@ -328,7 +322,7 @@ func render() {
 	WINDOW.Draw(c, sf.DefaultRenderStates())
 
 	// render player
-	framedPlayerPosition := getFramedPosition(camera, PLAYER.Position)
+	framedPlayerPosition := worldToFramePosition(FRAME, PLAYER.Position)
 	playerCircleShape := o.GetCircleShape(PLAYER.Circle_s, PLAYER.RenderProperties_s)
 	playerCircleShape.SetPosition(framedPlayerPosition.ToSFMLVector2f())
 	WINDOW.Draw(playerCircleShape, sf.DefaultRenderStates())
@@ -350,7 +344,7 @@ func render() {
 	// render asteroids
 	for e := ASTEROIDS.Front(); e != nil; e = e.Next() {
 		asteroid := e.Value.(*o.Asteroid_s)
-		framedAsteroidPosition := getFramedPosition(camera, asteroid.Position)
+		framedAsteroidPosition := worldToFramePosition(FRAME, asteroid.Position)
 		asteroidCircleShape := o.GetCircleShape(asteroid.Circle_s, asteroid.RenderProperties_s)
 		asteroidCircleShape.SetPosition(framedAsteroidPosition.ToSFMLVector2f())
 		WINDOW.Draw(asteroidCircleShape, sf.DefaultRenderStates())
@@ -372,7 +366,7 @@ func render() {
 			if err != nil {
 				panic(err)
 			}
-			r.SetPosition(getFramedPosition(camera, slip.Segment_s.GetMidpoint()).ToSFMLVector2f())
+			r.SetPosition(worldToFramePosition(FRAME, slip.Segment_s.GetMidpoint()).ToSFMLVector2f())
 			r.SetSize(sf.Vector2f{float32(SPAWN_BOUNDARY) * 2, float32(slip.Width)})
 			r.SetRotation(float32(v.RadiansToDegrees(slip.End1.Sub(slip.End2).GetAngle())))
 			r.SetFillColor(color)
@@ -382,7 +376,7 @@ func render() {
 		}
 	}
 
-	// // render boost
+	// // render boost bar
 	// r, err := sf.NewRectangleShape()
 	// if err != nil {
 	// 	panic(err)

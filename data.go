@@ -16,8 +16,6 @@ const (
 	FPS             uint    = 65
 	PLAYER_BOUNDARY float64 = 1000
 	SPAWN_BOUNDARY  float64 = 1400
-	CAMERA_OFFSET_X float64 = 0
-	CAMERA_OFFSET_Y float64 = 0
 
 	SHOULD_SPAWN_ASTEROIDS        bool    = true
 	ASTEROID_SPAWN_FREQUENCY      uint    = 3 // lower means more frequent
@@ -37,8 +35,8 @@ const (
 
 	PLAYER_RESET_DISTANCE   float64 = 3
 	PLAYER_RESET_VELOCITY   float64 = 200
-	PLAYER_CONTROL_RADIUS   float64 = 200
-	PLAYER_MAX_ACCELERATION float64 = 400
+	PLAYER_CONTROL_RADIUS   float64 = 300
+	PLAYER_MAX_ACCELERATION float64 = 700
 )
 
 // variables that should be immutable
@@ -51,7 +49,8 @@ var (
 
 var (
 	WINDOW        *sf.RenderWindow
-	CAMERA_OFFSET Vector
+	FRAME         Vector
+	CAMERA_OFFSET Vector // from center
 	INPUT         *Input_s
 	PLAYER        *Player_s
 	ASTEROIDS     *list.List
