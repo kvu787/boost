@@ -95,6 +95,8 @@ func setupGameVariables() {
 	WINDOW_DIAGNOL_LENGTH = math.Sqrt(math.Pow(float64(WINDOW_SIZE_X), 2) + math.Pow(float64(WINDOW_SIZE_Y), 2))
 
 	CURRENT_BOOST = MAX_BOOST
+
+	PLAYER_ACCELERATION_CURVE = polynomial(2, PLAYER_CONTROL_RADIUS, PLAYER_MAX_ACCELERATION)
 }
 
 func spawnInitialAsteroids(n uint) {
@@ -123,8 +125,8 @@ func spawnInitialAsteroids(n uint) {
 
 			// check intersection with player
 			if o.AreCirclesIntersecting(
-				o.CircleShape_s{PLAYER.Transform_s, PLAYER.Circle_s},
-				o.CircleShape_s{newAsteroid.Transform_s, newAsteroid.Circle_s}, -100) {
+				PLAYER.GetCircleShape(),
+				newAsteroid.GetCircleShape(), -100) {
 				continue
 			}
 
@@ -191,19 +193,17 @@ func update() {
 		}
 	}
 
-	// update player acceleration with user input
-	if INPUT.IsMousePressed && CURRENT_BOOST > 0.0 {
-		// apply accleration, decrease boost
+	// update player acceleration
+	if INPUT.IsMousePressed {
 		camera := PLAYER.Position.Add(CAMERA_OFFSET)
 		framedPlayerPosition := getFramedPosition(camera, PLAYER.Position)
-		acceleration := framedPlayerPosition.Sub(INPUT.MousePosition)
-		PLAYER.Acceleration = acceleration.Mul(SENSITIVITY)
-		CURRENT_BOOST -= BOOST_BURN * DURATION_PER_FRAME.Seconds()
+		displacement := framedPlayerPosition.Sub(INPUT.MousePosition)
+		acceleration := v.NewPolar(
+			PLAYER_ACCELERATION_CURVE(math.Min(displacement.GetMagnitude(), PLAYER_CONTROL_RADIUS)),
+			displacement.GetAngle())
+		PLAYER.Acceleration = acceleration
 	} else {
 		PLAYER.Acceleration = v.NewZeroVector()
-		if !INPUT.IsMousePressed {
-			CURRENT_BOOST = math.Min(CURRENT_BOOST+BOOST_REGENERATION*DURATION_PER_FRAME.Seconds(), MAX_BOOST)
-		}
 	}
 
 	// update player transform
@@ -333,6 +333,20 @@ func render() {
 	playerCircleShape.SetPosition(framedPlayerPosition.ToSFMLVector2f())
 	WINDOW.Draw(playerCircleShape, sf.DefaultRenderStates())
 
+	// render player control radius
+	c, err = sf.NewCircleShape()
+	if err != nil {
+		panic(err)
+	}
+	var pr float32 = float32(PLAYER_CONTROL_RADIUS)
+	c.SetPosition(framedPlayerPosition.ToSFMLVector2f())
+	c.SetRadius(pr)
+	c.SetOrigin(sf.Vector2f{pr, pr})
+	c.SetOutlineThickness(5)
+	c.SetOutlineColor(func() sf.Color { w := p.WHITE; w.A = 30; return w }())
+	c.SetFillColor(p.TRANSPARENT)
+	WINDOW.Draw(c, sf.DefaultRenderStates())
+
 	// render asteroids
 	for e := ASTEROIDS.Front(); e != nil; e = e.Next() {
 		asteroid := e.Value.(*o.Asteroid_s)
@@ -368,20 +382,20 @@ func render() {
 		}
 	}
 
-	// render boost
-	r, err := sf.NewRectangleShape()
-	if err != nil {
-		panic(err)
-	}
-	color := p.RED
-	color.A = 200
-	boostRatio := CURRENT_BOOST / MAX_BOOST
-	r.SetPosition(v.NewZeroVector().ToSFMLVector2f())
-	r.SetSize(v.NewCartesian(boostRatio*float64(WINDOW_SIZE_X), 10).ToSFMLVector2f())
-	r.SetRotation(0)
-	r.SetFillColor(color)
-	r.SetOutlineThickness(0)
-	WINDOW.Draw(r, sf.DefaultRenderStates())
+	// // render boost
+	// r, err := sf.NewRectangleShape()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// color := p.RED
+	// color.A = 200
+	// boostRatio := CURRENT_BOOST / MAX_BOOST
+	// r.SetPosition(v.NewZeroVector().ToSFMLVector2f())
+	// r.SetSize(v.NewCartesian(boostRatio*float64(WINDOW_SIZE_X), 10).ToSFMLVector2f())
+	// r.SetRotation(0)
+	// r.SetFillColor(color)
+	// r.SetOutlineThickness(0)
+	// WINDOW.Draw(r, sf.DefaultRenderStates())
 
 	WINDOW.Display()
 }

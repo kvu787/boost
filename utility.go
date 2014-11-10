@@ -3,6 +3,7 @@ package main
 import (
 	"container/list"
 	"fmt"
+	"math"
 
 	. "bitbucket.org/kvu787/boost/lib/vector"
 )
@@ -34,4 +35,11 @@ func pushFrontAll(l *list.List, objects ...interface{}) {
 func getFramedPosition(camera, x Vector) Vector {
 	frameTopLeftCorner := camera.Add(NewCartesian(-0.5*float64(WINDOW_SIZE_X), -0.5*float64(WINDOW_SIZE_Y)))
 	return x.Sub(frameTopLeftCorner)
+}
+
+func polynomial(exp, xScale, yScale float64) func(float64) float64 {
+	return func(x float64) float64 {
+		k := (yScale) / (math.Pow(xScale, exp))
+		return k * (math.Pow(x, exp))
+	}
 }

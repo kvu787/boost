@@ -1,10 +1,7 @@
-- player asteroid collision
-- implement slipstream
-	- When checking asteroid collisions
-	- Also check if player is between them
-- better spawn behavior
-	- Initial spawn: outside player window
-		- Check for intersections
-	- After: at spawn boundary
-		- Asteroid number limit
-		- Make sure not spawning too close to last location
+- arrow to indicate player direction
+- better acceleration control
+	- acceleration curves
+	- controller support
+- gridlines? to get a better sense of speed
+- momentum collisions
+- camera shift when moving
