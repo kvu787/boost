@@ -68,7 +68,7 @@ func setupGameVariables() {
 			v.NewZeroVector(),
 		},
 		o.Circle_s{5},
-		o.RenderProperties_s{1, 0, p.BLUE, p.WHITE}}
+		o.RenderProperties_s{1, 0, p.BLUE, p.WHITE, v.NewCartesian(1, 1)}}
 
 	ASTEROIDS = list.New()
 	SLIPS = list.New()
@@ -101,7 +101,7 @@ func spawnInitialAsteroids(n uint) {
 				v.NewZeroVector(),
 			},
 			o.Circle_s{radius},
-			o.RenderProperties_s{0, 0, color, p.WHITE}}
+			o.RenderProperties_s{0, 0, color, p.WHITE, v.NewCartesian(1, 1)}}
 
 		// check if it intersects with anything
 		for {
@@ -175,7 +175,7 @@ func update() {
 					v.NewZeroVector(),
 				},
 				o.Circle_s{float64(radius)},
-				o.RenderProperties_s{0, 0, color, p.WHITE}}
+				o.RenderProperties_s{0, 0, color, p.WHITE, v.NewCartesian(1, 1)}}
 			ASTEROIDS.PushBack(newAsteroid)
 		}
 	}
@@ -197,12 +197,8 @@ func update() {
 		frameCenter := v.NewCartesian((float64(WINDOW_SIZE_X))/2.0, (float64(WINDOW_SIZE_Y))/2.0)
 		centerMouseDisplacement := INPUT.MousePosition.Sub(frameCenter)
 		shiftFromMovement := centerMouseDisplacement.Mul(-0.2)
-		// shiftFromAcceleration := centerMouseDisplacement.Mul(0.3)
 
 		goalCameraShift := shiftFromMovement
-		// if INPUT.IsMousePressed {
-		// 	goalCameraShift = goalCameraShift.Add(shiftFromAcceleration)
-		// }
 		diff := goalCameraShift.Sub(CAMERA_SHIFT)
 		CAMERA_SHIFT = CAMERA_SHIFT.Add(diff.Mul(0.1))
 	}()
@@ -296,17 +292,6 @@ func update() {
 	}
 }
 
-func resolveCollisionVelocities(t1, t2 o.Transform_s) (v.Vector, v.Vector) {
-	resolve := func(x1, x2 o.Transform_s) v.Vector {
-		fromx1tox2 := x2.Position.Sub(x1.Position)
-		proj := x1.Velocity.Projection(fromx1tox2)
-		rej := x1.Velocity.Rejection(fromx1tox2)
-		proj = proj.Mul(-1)
-		return proj.Add(rej)
-	}
-	return resolve(t1, t2), resolve(t2, t1)
-}
-
 func render() {
 	WINDOW.Clear(p.BLACK)
 
@@ -314,24 +299,22 @@ func render() {
 	FRAME = PLAYER.Position.Add(v.NewCartesian((float64(WINDOW_SIZE_X))/-2.0, (float64(WINDOW_SIZE_Y))/-2.0)).Add(CAMERA_SHIFT)
 
 	// render grid lines
-	func() {
-		density := 150
-		width := 2.0
+	func(density int, width float64) {
 		c := p.WHITE
 		c.A = 70
 		// vertical
 		for i := 0; i <= int(SPAWN_BOUNDARY)*2; i += density {
-			fmt.Println(i)
-			r, err := sf.NewRectangleShape()
-			if err != nil {
-				panic(err)
+			rp := o.RenderProperties_s{
+				0,
+				math.Pi * 0.5,
+				p.SetAlpha(p.WHITE, 70),
+				p.WHITE,
+				v.NewUnitVector(),
 			}
-			r.SetRotation(90)
-			r.SetSize(v.NewCartesian(SPAWN_BOUNDARY*2, width).ToSFMLVector2f())
-			// r.SetOrigin(v.NewCartesian(-SPAWN_BOUNDARY, width/2).ToSFMLVector2f())
-			r.SetPosition(worldToFramePosition(FRAME, v.NewCartesian(float64(i), 0)).Sub(v.NewCartesian(SPAWN_BOUNDARY, SPAWN_BOUNDARY)).ToSFMLVector2f())
-			r.SetOutlineThickness(0)
-			r.SetFillColor(c)
+			r := CreateRectangle(v.NewCartesian(SPAWN_BOUNDARY*2, width), rp)
+			r.SetPosition(
+				worldToFramePosition(FRAME,
+					v.NewCartesian(-SPAWN_BOUNDARY+float64(i), 0)).ToSFMLVector2f())
 			WINDOW.Draw(r, sf.DefaultRenderStates())
 		}
 		// horiz
@@ -342,83 +325,91 @@ func render() {
 				panic(err)
 			}
 			r.SetSize(v.NewCartesian(SPAWN_BOUNDARY*2, width).ToSFMLVector2f())
-			// r.SetOrigin(v.NewCartesian(-SPAWN_BOUNDARY, width/2).ToSFMLVector2f())
 			r.SetPosition(worldToFramePosition(FRAME, v.NewCartesian(0, float64(i))).Sub(v.NewCartesian(SPAWN_BOUNDARY, SPAWN_BOUNDARY)).ToSFMLVector2f())
 			r.SetOutlineThickness(0)
 			r.SetFillColor(c)
 			WINDOW.Draw(r, sf.DefaultRenderStates())
 		}
-	}()
+	}(125, 2.0)
 
 	// render player boundary
-	boundaryCenterPosition := worldToFramePosition(FRAME, v.NewZeroVector())
-	c, err := sf.NewCircleShape()
-	if err != nil {
-		panic(err)
-	}
-	var pb float32 = float32(PLAYER_BOUNDARY + 10)
-	c.SetPosition(boundaryCenterPosition.ToSFMLVector2f())
-	c.SetRadius(pb)
-	c.SetOrigin(sf.Vector2f{pb, pb})
-	c.SetOutlineThickness(5)
-	c.SetOutlineColor(p.WHITE)
-	c.SetFillColor(p.TRANSPARENT)
-	WINDOW.Draw(c, sf.DefaultRenderStates())
+	func(boundaryExtension float64, thickness float32) {
+		boundaryCenterPosition := worldToFramePosition(FRAME, v.NewZeroVector())
+		c, err := sf.NewCircleShape()
+		if err != nil {
+			panic(err)
+		}
+		var pb float32 = float32(PLAYER_BOUNDARY + boundaryExtension)
+		c.SetPosition(boundaryCenterPosition.ToSFMLVector2f())
+		c.SetRadius(pb)
+		c.SetOrigin(sf.Vector2f{pb, pb})
+		c.SetOutlineThickness(thickness)
+		c.SetOutlineColor(p.WHITE)
+		c.SetFillColor(p.TRANSPARENT)
+		WINDOW.Draw(c, sf.DefaultRenderStates())
+	}(10, 5)
 
 	// render player
-	framedPlayerPosition := worldToFramePosition(FRAME, PLAYER.Position)
-	playerCircleShape := o.GetCircleShape(PLAYER.Circle_s, PLAYER.RenderProperties_s)
-	playerCircleShape.SetPosition(framedPlayerPosition.ToSFMLVector2f())
-	WINDOW.Draw(playerCircleShape, sf.DefaultRenderStates())
+	func() {
+		framedPlayerPosition := worldToFramePosition(FRAME, PLAYER.Position)
+		playerCircleShape := o.GetCircleShape(PLAYER.Circle_s, PLAYER.RenderProperties_s)
+		playerCircleShape.SetPosition(framedPlayerPosition.ToSFMLVector2f())
+		WINDOW.Draw(playerCircleShape, sf.DefaultRenderStates())
+	}()
 
 	// render player control radius
-	c, err = sf.NewCircleShape()
-	if err != nil {
-		panic(err)
-	}
-	var pr float32 = float32(PLAYER_CONTROL_RADIUS)
-	c.SetPosition(framedPlayerPosition.ToSFMLVector2f())
-	c.SetRadius(pr)
-	c.SetOrigin(sf.Vector2f{pr, pr})
-	c.SetOutlineThickness(5)
-	c.SetOutlineColor(func() sf.Color { w := p.WHITE; w.A = 30; return w }())
-	c.SetFillColor(p.TRANSPARENT)
-	WINDOW.Draw(c, sf.DefaultRenderStates())
+	func() {
+		framedPlayerPosition := worldToFramePosition(FRAME, PLAYER.Position)
+		rp := o.RenderProperties_s{
+			5,
+			0,
+			p.TRANSPARENT,
+			func() sf.Color { w := p.WHITE; w.A = 30; return w }(),
+			v.NewCartesian(1, 1),
+		}
+		c := CreateCircle(PLAYER_CONTROL_RADIUS, rp)
+		c.SetPosition(framedPlayerPosition.ToSFMLVector2f())
+		WINDOW.Draw(c, sf.DefaultRenderStates())
+	}()
 
 	// render asteroids
-	for e := ASTEROIDS.Front(); e != nil; e = e.Next() {
-		asteroid := e.Value.(*o.Asteroid_s)
-		framedAsteroidPosition := worldToFramePosition(FRAME, asteroid.Position)
-		asteroidCircleShape := o.GetCircleShape(asteroid.Circle_s, asteroid.RenderProperties_s)
-		asteroidCircleShape.SetPosition(framedAsteroidPosition.ToSFMLVector2f())
-		WINDOW.Draw(asteroidCircleShape, sf.DefaultRenderStates())
-	}
+	func() {
+		for e := ASTEROIDS.Front(); e != nil; e = e.Next() {
+			asteroid := e.Value.(*o.Asteroid_s)
+			framedAsteroidPosition := worldToFramePosition(FRAME, asteroid.Position)
+			asteroidCircleShape := o.GetCircleShape(asteroid.Circle_s, asteroid.RenderProperties_s)
+			asteroidCircleShape.SetPosition(framedAsteroidPosition.ToSFMLVector2f())
+			WINDOW.Draw(asteroidCircleShape, sf.DefaultRenderStates())
+		}
+	}()
 
 	// render slips
-	for e, next := SLIPS.Front(), new(list.Element); e != nil; e = next {
-		next = e.Next()
-		slip := e.Value.(o.Slip_s)
+	func() {
+		for e, next := SLIPS.Front(), new(list.Element); e != nil; e = next {
+			next = e.Next()
+			slip := e.Value.(o.Slip_s)
 
-		timeElapsed := time.Since(slip.TimeSpawned)
-		if timeElapsed.Seconds() > slip.Duration.Seconds() {
-			SLIPS.Remove(e)
-		} else {
-			transparencyRatio := (slip.Duration.Seconds() - timeElapsed.Seconds()) / slip.Duration.Seconds()
-			color := slip.Color
-			color.A = uint8(transparencyRatio * float64(255))
-			r, err := sf.NewRectangleShape()
-			if err != nil {
-				panic(err)
+			timeElapsed := time.Since(slip.TimeSpawned)
+			if timeElapsed.Seconds() > slip.Duration.Seconds() {
+				SLIPS.Remove(e)
+			} else {
+				transparencyRatio := (slip.Duration.Seconds() - timeElapsed.Seconds()) / slip.Duration.Seconds()
+				color := slip.Color
+				color.A = uint8(transparencyRatio * float64(255))
+				rp := o.RenderProperties_s{
+					0,
+					slip.End1.Sub(slip.End2).GetAngle(),
+					color,
+					p.WHITE,
+					v.NewCartesian(1, 1),
+				}
+				r := CreateRectangle(v.NewCartesian(float64(SPAWN_BOUNDARY)*2.3, slip.Width), rp)
+				r.SetPosition(worldToFramePosition(FRAME, slip.Segment_s.GetMidpoint()).ToSFMLVector2f())
+
+				WINDOW.Draw(r, sf.DefaultRenderStates())
 			}
-			r.SetPosition(worldToFramePosition(FRAME, slip.Segment_s.GetMidpoint()).ToSFMLVector2f())
-			r.SetSize(sf.Vector2f{float32(SPAWN_BOUNDARY) * 2, float32(slip.Width)})
-			r.SetRotation(float32(v.RadiansToDegrees(slip.End1.Sub(slip.End2).GetAngle())))
-			r.SetFillColor(color)
-			r.SetOutlineThickness(0)
-			r.SetOrigin(sf.Vector2f{float32(SPAWN_BOUNDARY), float32(slip.Width) / 2})
-			WINDOW.Draw(r, sf.DefaultRenderStates())
 		}
-	}
+	}()
 
 	// // render boost bar
 	// r, err := sf.NewRectangleShape()

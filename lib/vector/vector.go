@@ -43,6 +43,10 @@ func DegreesToRadians(degrees uint) float64 {
 	return (float64(degrees) / 360.0) * 2 * math.Pi
 }
 
+func NewUnitVector() Vector {
+	return NewCartesian(1, 1)
+}
+
 func NewZeroVector() Vector {
 	return NewCartesian(0, 0)
 }
