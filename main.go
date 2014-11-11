@@ -67,17 +67,19 @@ func setupGameVariables() {
 			v.NewZeroVector(),
 			v.NewZeroVector(),
 		},
-		o.Circle_s{5},
-		o.RenderProperties_s{1, 0, p.BLUE, p.WHITE, v.NewCartesian(1, 1)}}
+		o.Circle_s{6},
+		o.RenderProperties_s{0, 0, p.BLUE, p.WHITE, v.NewUnitVector()}}
 
 	ASTEROIDS = list.New()
 	SLIPS = list.New()
 
-	ASTEROID_COLORS = []sf.Color{
-		p.LIGHT_GRAY,
-		p.GRAY,
-		p.DARK_BROWN,
-		p.LIGHT_BROWN}
+	ASTEROID_COLORS = []sf.Color{p.WHITE}
+
+	// ASTEROID_COLORS = []sf.Color{
+	// 	p.LIGHT_GRAY,
+	// 	p.GRAY,
+	// 	p.DARK_BROWN,
+	// 	p.LIGHT_BROWN}
 
 	WINDOW_DIAGNOL_LENGTH = math.Sqrt(math.Pow(float64(WINDOW_SIZE_X), 2) + math.Pow(float64(WINDOW_SIZE_Y), 2))
 
@@ -196,11 +198,20 @@ func update() {
 	func() {
 		frameCenter := v.NewCartesian((float64(WINDOW_SIZE_X))/2.0, (float64(WINDOW_SIZE_Y))/2.0)
 		centerMouseDisplacement := INPUT.MousePosition.Sub(frameCenter)
-		shiftFromMovement := centerMouseDisplacement.Mul(-0.2)
-
+		shiftFromMovement := centerMouseDisplacement.Mul(-0.1)
 		goalCameraShift := shiftFromMovement
+
+		// if INPUT.IsMousePressed {
+		// 	shiftFromAcceleration := centerMouseDisplacement.Mul(0.3 * PLAYER.Acceleration.GetMagnitude() / PLAYER_MAX_ACCELERATION)
+		// 	goalCameraShift = goalCameraShift.Add(shiftFromAcceleration)
+		// }
+
 		diff := goalCameraShift.Sub(CAMERA_SHIFT)
-		CAMERA_SHIFT = CAMERA_SHIFT.Add(diff.Mul(0.1))
+		if INPUT.IsMousePressed {
+			CAMERA_SHIFT = CAMERA_SHIFT.Add(diff.Mul(0.2))
+		} else {
+			CAMERA_SHIFT = CAMERA_SHIFT.Add(diff.Mul(0.1))
+		}
 	}()
 
 	// update player transform
@@ -263,7 +274,7 @@ func update() {
 			} else {
 				// check slip
 				segment := o.Segment_s{a1.Position, a2.Position}
-				if segment.GetLength()-a1.Radius-a2.Radius < MAX_SLIP_WIDTH || LIGHT_SPAWN_DURATION == 1337 {
+				if segment.GetLength()-a1.Radius-a2.Radius < SLIP_MAX_WIDTH || LIGHT_SPAWN_DURATION == 02471 {
 					if o.AreCircleSegmentIntersecting(segment, PLAYER.GetCircleShape()) {
 						width := SLIP_WIDTH_SCALING / segment.GetLength()
 
@@ -354,6 +365,7 @@ func render() {
 		framedPlayerPosition := worldToFramePosition(FRAME, PLAYER.Position)
 		playerCircleShape := o.GetCircleShape(PLAYER.Circle_s, PLAYER.RenderProperties_s)
 		playerCircleShape.SetPosition(framedPlayerPosition.ToSFMLVector2f())
+		playerCircleShape.SetFillColor(p.RandomColor())
 		WINDOW.Draw(playerCircleShape, sf.DefaultRenderStates())
 	}()
 
@@ -379,6 +391,9 @@ func render() {
 			framedAsteroidPosition := worldToFramePosition(FRAME, asteroid.Position)
 			asteroidCircleShape := o.GetCircleShape(asteroid.Circle_s, asteroid.RenderProperties_s)
 			asteroidCircleShape.SetPosition(framedAsteroidPosition.ToSFMLVector2f())
+			if LIGHT_SPAWN_DURATION == 02471 {
+				asteroidCircleShape.SetFillColor(p.RandomColor())
+			}
 			WINDOW.Draw(asteroidCircleShape, sf.DefaultRenderStates())
 		}
 	}()

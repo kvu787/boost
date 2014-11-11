@@ -1,5 +1,4 @@
 - better acceleration control
 	- acceleration curves
 	- controller support
-- gridlines? to get a better sense of speed
 - momentum collisions

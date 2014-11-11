@@ -26,7 +26,7 @@ func RandomColor() sf.Color {
 		uint8(rand.Int31n(256)),
 		uint8(rand.Int31n(256)),
 		uint8(rand.Int31n(256)),
-		0}
+		255}
 }
 
 func SetAlpha(color sf.Color, alpha uint8) sf.Color {

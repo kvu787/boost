@@ -26,17 +26,18 @@ const (
 	ASTEROID_BOUNCE_BACK_VELOCITY float64 = 300
 	ASTEROID_INITIAL_SPAWN_COUNT  uint    = 45
 
-	SLIP_WIDTH_SCALING   float64 = 4500 // higher means wider
 	MAX_BOOST            float64 = 100
-	LIGHT_SPAWN_DURATION uint    = 200
 	BOOST_REGENERATION   float64 = 100
 	BOOST_BURN           float64 = 100
-	SLIP_DURATION        float64 = 4
-	MAX_SLIP_WIDTH       float64 = 300
+	LIGHT_SPAWN_DURATION uint    = 0x529
+
+	SLIP_DURATION      float64 = 8
+	SLIP_WIDTH_SCALING float64 = 4500 // higher means wider
+	SLIP_MAX_WIDTH     float64 = 300
 
 	PLAYER_RESET_DISTANCE   float64 = 3
 	PLAYER_RESET_VELOCITY   float64 = 200
-	PLAYER_CONTROL_RADIUS   float64 = 200
+	PLAYER_CONTROL_RADIUS   float64 = 50
 	PLAYER_MAX_ACCELERATION float64 = 1500
 )
 
