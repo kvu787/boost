@@ -1,0 +1,10 @@
+{
+	"InitialSpawnCount" : 75,
+	"MaxCount" : 75,
+	"SpawnFrequency" : 10,
+	"MinRadius" : 30.0,
+	"MaxRadius": 100.0,
+	"MinVelocity" : 100.0,
+	"MaxVelocity" : 150.0,
+	"PlayerBouncebackVelocity" : 200.0
+}

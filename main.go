@@ -2,9 +2,12 @@ package main
 
 import (
 	"container/list"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"math/rand"
+	"os"
 	"runtime"
 	"time"
 
@@ -16,9 +19,31 @@ import (
 )
 
 func main() {
+	// read config files
+	func(graphicsPath, playerPath, levelPath string) {
+		bs, err := ioutil.ReadFile(graphicsPath)
+		if err != nil {
+			panic(err)
+		}
+		json.Unmarshal(bs, &GRAPHICS_SETTINGS)
+
+		bs, err = ioutil.ReadFile(playerPath)
+		if err != nil {
+			panic(err)
+		}
+		json.Unmarshal(bs, &PLAYER_SETTINGS)
+
+		bs, err = ioutil.ReadFile(levelPath)
+		if err != nil {
+			panic(err)
+		}
+		json.Unmarshal(bs, &SANDBOX_SETTINGS)
+		fmt.Println(SANDBOX_SETTINGS)
+	}(os.Args[1], os.Args[2], os.Args[3])
+
 	// timing variables
 	startTime := time.Now()
-	durationPerFrame := time.Duration(int64(time.Second) / int64(FPS))
+	durationPerFrame := time.Duration(int64(time.Second) / int64(GRAPHICS_SETTINGS.FpsLock))
 
 	// setup
 	setupWindow()
@@ -26,7 +51,7 @@ func main() {
 	// setup game variables
 	setupGameVariables()
 
-	spawnInitialAsteroids(ASTEROID_INITIAL_SPAWN_COUNT)
+	spawnInitialAsteroids(SANDBOX_SETTINGS.InitialSpawnCount)
 
 	// main loop
 	fmt.Println("hello my name is major tom")
@@ -42,22 +67,21 @@ func main() {
 		// sleep if frametime is short
 		frametime := time.Since(startTime)
 		time.Sleep(time.Duration(int64(durationPerFrame) - int64(frametime)))
-		// fmt.Println("framerate: ", 1.0 / frametime.Seconds())
 	}
 }
 
 func setupWindow() {
 	runtime.LockOSThread()
 	WINDOW = sf.NewRenderWindow(
-		sf.VideoMode{WINDOW_SIZE_X, WINDOW_SIZE_Y, 32},
+		sf.VideoMode{GRAPHICS_SETTINGS.WindowX, GRAPHICS_SETTINGS.WindowY, 32},
 		"boost",
 		sf.StyleDefault,
 		sf.DefaultContextSettings())
 }
 
 func setupGameVariables() {
-	DURATION_PER_FRAME = time.Duration(int64(time.Second) / int64(FPS))
-	FRAME = v.NewCartesian((float64(WINDOW_SIZE_X))/-2.0, (float64(WINDOW_SIZE_Y))/-2.0)
+	DURATION_PER_FRAME = time.Duration(int64(time.Second) / int64(GRAPHICS_SETTINGS.FpsLock))
+	FRAME = v.NewCartesian((float64(GRAPHICS_SETTINGS.WindowX))/-2.0, (float64(GRAPHICS_SETTINGS.WindowY))/-2.0)
 	INPUT = &o.Input_s{false, nil}
 	CAMERA_SHIFT = v.NewZeroVector()
 
@@ -81,19 +105,21 @@ func setupGameVariables() {
 	// 	p.DARK_BROWN,
 	// 	p.LIGHT_BROWN}
 
-	WINDOW_DIAGNOL_LENGTH = math.Sqrt(math.Pow(float64(WINDOW_SIZE_X), 2) + math.Pow(float64(WINDOW_SIZE_Y), 2))
+	WINDOW_DIAGNOL_LENGTH = math.Sqrt(math.Pow(float64(GRAPHICS_SETTINGS.WindowX), 2) + math.Pow(float64(GRAPHICS_SETTINGS.WindowY), 2))
 
 	CURRENT_BOOST = MAX_BOOST
 
-	PLAYER_ACCELERATION_CURVE = polynomial(2, PLAYER_CONTROL_RADIUS, PLAYER_MAX_ACCELERATION)
+	PLAYER_ACCELERATION_CURVE = polynomial(2, PLAYER_SETTINGS.ControlRadius, PLAYER_SETTINGS.MaxAcceleration)
+
+	LAST_ASTEROID_SPAWN_TIME = time.Now()
 }
 
 func spawnInitialAsteroids(n uint) {
 	for n != 0 {
 		// create asteroid
 		color := ASTEROID_COLORS[rand.Intn(len(ASTEROID_COLORS))]
-		velocityMagnitude := rand.Float64()*(ASTEROID_MAX_VELOCITY-ASTEROID_MIN_VELOCITY) + ASTEROID_MIN_VELOCITY
-		radius := rand.Float64()*(ASTEROID_MAX_RADIUS-ASTEROID_MIN_RADIUS) + ASTEROID_MIN_RADIUS
+		velocityMagnitude := rand.Float64()*(SANDBOX_SETTINGS.MaxVelocity-SANDBOX_SETTINGS.MinVelocity) + SANDBOX_SETTINGS.MinVelocity
+		radius := rand.Float64()*(SANDBOX_SETTINGS.MaxRadius-SANDBOX_SETTINGS.MinRadius) + SANDBOX_SETTINGS.MinRadius
 
 		velocity := v.NewPolar(velocityMagnitude, rand.Float64()*2*math.Pi)
 		newAsteroid := &o.Asteroid_s{
@@ -153,15 +179,18 @@ func input() {
 }
 
 func update() {
+	fmt.Println(ASTEROIDS.Len())
 
 	// spawn asteroid
-	if SHOULD_SPAWN_ASTEROIDS {
-		if rand.Intn(int(ASTEROID_SPAWN_FREQUENCY)) == 0 {
+	func(spawnFrequency uint) {
+		var spawnDelay float64 = 1.0 / float64(spawnFrequency)
+		if (uint(ASTEROIDS.Len()) < SANDBOX_SETTINGS.MaxCount) && time.Since(LAST_ASTEROID_SPAWN_TIME).Seconds() >= spawnDelay {
+			LAST_ASTEROID_SPAWN_TIME = time.Now()
 			color := ASTEROID_COLORS[rand.Intn(len(ASTEROID_COLORS))]
 			radian := v.DegreesToRadians(uint(rand.Intn(360)))
-			velocityMagnitude := rand.Float64()*(ASTEROID_MAX_VELOCITY-ASTEROID_MIN_VELOCITY) + ASTEROID_MIN_VELOCITY
+			velocityMagnitude := rand.Float64()*(SANDBOX_SETTINGS.MaxVelocity-SANDBOX_SETTINGS.MinVelocity) + SANDBOX_SETTINGS.MinVelocity
 			velocityDegreeSpread := 20.0
-			radius := rand.Float64()*(ASTEROID_MAX_RADIUS-ASTEROID_MIN_RADIUS) + ASTEROID_MIN_RADIUS
+			radius := rand.Float64()*(SANDBOX_SETTINGS.MaxRadius-SANDBOX_SETTINGS.MinRadius) + SANDBOX_SETTINGS.MinRadius
 
 			position := v.NewPolar(SPAWN_BOUNDARY-10, radian)
 			velocity := v.NewZeroVector().Sub(position)
@@ -180,23 +209,25 @@ func update() {
 				o.RenderProperties_s{0, 0, color, p.WHITE, v.NewCartesian(1, 1)}}
 			ASTEROIDS.PushBack(newAsteroid)
 		}
-	}
+	}(SANDBOX_SETTINGS.SpawnFrequency)
 
 	// update player acceleration
-	if INPUT.IsMousePressed {
-		worldMousePosition := frameToWorldPosition(FRAME, INPUT.MousePosition)
-		displacement := PLAYER.Position.Sub(worldMousePosition)
-		acceleration := v.NewPolar(
-			PLAYER_ACCELERATION_CURVE(math.Min(displacement.GetMagnitude(), PLAYER_CONTROL_RADIUS)),
-			displacement.GetAngle())
-		PLAYER.Acceleration = acceleration
-	} else {
-		PLAYER.Acceleration = v.NewZeroVector()
-	}
+	func() {
+		if INPUT.IsMousePressed {
+			worldMousePosition := frameToWorldPosition(FRAME, INPUT.MousePosition)
+			displacement := PLAYER.Position.Sub(worldMousePosition)
+			acceleration := v.NewPolar(
+				PLAYER_ACCELERATION_CURVE(math.Min(displacement.GetMagnitude(), PLAYER_SETTINGS.ControlRadius)),
+				displacement.GetAngle())
+			PLAYER.Acceleration = acceleration
+		} else {
+			PLAYER.Acceleration = v.NewZeroVector()
+		}
+	}()
 
 	// update camera shift
 	func() {
-		frameCenter := v.NewCartesian((float64(WINDOW_SIZE_X))/2.0, (float64(WINDOW_SIZE_Y))/2.0)
+		frameCenter := v.NewCartesian((float64(GRAPHICS_SETTINGS.WindowX))/2.0, (float64(GRAPHICS_SETTINGS.WindowY))/2.0)
 		centerMouseDisplacement := INPUT.MousePosition.Sub(frameCenter)
 		shiftFromMovement := centerMouseDisplacement.Mul(-0.1)
 		goalCameraShift := shiftFromMovement
@@ -220,13 +251,13 @@ func update() {
 	// check if player is out of bounds
 	if PLAYER.Position.GetMagnitude() >= float64(PLAYER_BOUNDARY) {
 		PLAYER.Position = v.NewPolar(
-			float64(PLAYER_BOUNDARY-PLAYER_RESET_DISTANCE),
+			float64(PLAYER_BOUNDARY-PLAYER_BOUNDARY_RESET_DISTANCE),
 			PLAYER.Position.GetAngle())
 
 		PLAYER.Acceleration = v.NewZeroVector()
 
 		PLAYER.Velocity = v.NewPolar(
-			PLAYER_RESET_VELOCITY,
+			PLAYER_BOUNDARY_RESET_VELOCITY,
 			PLAYER.Position.GetAngle()+math.Pi)
 	}
 
@@ -295,7 +326,7 @@ func update() {
 		isIntersecting := o.AreCirclesIntersecting(a.GetCircleShape(), PLAYER.GetCircleShape(), 1)
 		if isIntersecting {
 			PLAYER.Velocity, _ = resolveCollisionVelocities(PLAYER.Transform_s, a.Transform_s)
-			PLAYER.Velocity.SetMagnitude(ASTEROID_BOUNCE_BACK_VELOCITY)
+			PLAYER.Velocity.SetMagnitude(SANDBOX_SETTINGS.PlayerBouncebackVelocity)
 			temp := PLAYER.Position.Sub(a.Position)
 			temp.SetMagnitude(a.Radius + PLAYER.Radius + 1)
 			PLAYER.Position = a.Position.Add(temp)
@@ -307,7 +338,7 @@ func render() {
 	WINDOW.Clear(p.BLACK)
 
 	// update the frame with respect to player position
-	FRAME = PLAYER.Position.Add(v.NewCartesian((float64(WINDOW_SIZE_X))/-2.0, (float64(WINDOW_SIZE_Y))/-2.0)).Add(CAMERA_SHIFT)
+	FRAME = PLAYER.Position.Add(v.NewCartesian((float64(GRAPHICS_SETTINGS.WindowX))/-2.0, (float64(GRAPHICS_SETTINGS.WindowY))/-2.0)).Add(CAMERA_SHIFT)
 
 	// render grid lines
 	func(density int, width float64) {
@@ -328,9 +359,8 @@ func render() {
 					v.NewCartesian(-SPAWN_BOUNDARY+float64(i), 0)).ToSFMLVector2f())
 			WINDOW.Draw(r, sf.DefaultRenderStates())
 		}
-		// horiz
+		// horizontal
 		for i := 0; i <= int(SPAWN_BOUNDARY)*2; i += density {
-			fmt.Println(i)
 			r, err := sf.NewRectangleShape()
 			if err != nil {
 				panic(err)
@@ -344,19 +374,17 @@ func render() {
 	}(125, 2.0)
 
 	// render player boundary
-	func(boundaryExtension float64, thickness float32) {
+	func(boundaryExtension float64, thickness float64) {
 		boundaryCenterPosition := worldToFramePosition(FRAME, v.NewZeroVector())
-		c, err := sf.NewCircleShape()
-		if err != nil {
-			panic(err)
+		rp := o.RenderProperties_s{
+			thickness,
+			0,
+			p.TRANSPARENT,
+			p.WHITE,
+			v.NewUnitVector(),
 		}
-		var pb float32 = float32(PLAYER_BOUNDARY + boundaryExtension)
+		c := CreateCircle(PLAYER_BOUNDARY+boundaryExtension, rp)
 		c.SetPosition(boundaryCenterPosition.ToSFMLVector2f())
-		c.SetRadius(pb)
-		c.SetOrigin(sf.Vector2f{pb, pb})
-		c.SetOutlineThickness(thickness)
-		c.SetOutlineColor(p.WHITE)
-		c.SetFillColor(p.TRANSPARENT)
 		WINDOW.Draw(c, sf.DefaultRenderStates())
 	}(10, 5)
 
@@ -379,7 +407,7 @@ func render() {
 			func() sf.Color { w := p.WHITE; w.A = 30; return w }(),
 			v.NewCartesian(1, 1),
 		}
-		c := CreateCircle(PLAYER_CONTROL_RADIUS, rp)
+		c := CreateCircle(PLAYER_SETTINGS.ControlRadius, rp)
 		c.SetPosition(framedPlayerPosition.ToSFMLVector2f())
 		WINDOW.Draw(c, sf.DefaultRenderStates())
 	}()
@@ -435,7 +463,7 @@ func render() {
 	// color.A = 200
 	// boostRatio := CURRENT_BOOST / MAX_BOOST
 	// r.SetPosition(v.NewZeroVector().ToSFMLVector2f())
-	// r.SetSize(v.NewCartesian(boostRatio*float64(WINDOW_SIZE_X), 10).ToSFMLVector2f())
+	// r.SetSize(v.NewCartesian(boostRatio*float64(GRAPHICS_SETTINGS.WindowX), 10).ToSFMLVector2f())
 	// r.SetRotation(0)
 	// r.SetFillColor(color)
 	// r.SetOutlineThickness(0)

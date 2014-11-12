@@ -1,4 +1,8 @@
-- better acceleration control
-	- acceleration curves
-	- controller support
+- better settings
+	- asteroid spawn locations
+	- acceleration control
+		- acceleration curves
+- controller support
+- zoom out
 - momentum collisions
+- Make rendering more efficient
