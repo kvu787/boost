@@ -4,7 +4,7 @@
 	"SpawnFrequency" : 20,
 	"MinRadius" : 30.0,
 	"MaxRadius": 100.0,
-	"MinVelocity" : 100.0,
-	"MaxVelocity" : 150.0,
+	"MinVelocity" : 150.0,
+	"MaxVelocity" : 200.0,
 	"PlayerBouncebackVelocity" : 200.0
 }

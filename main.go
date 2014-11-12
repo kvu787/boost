@@ -113,6 +113,10 @@ func setupGameVariables() {
 	LAST_ASTEROID_SPAWN_TIME = time.Now()
 
 	HEALTH_CURRENT = HEALTH_MAX
+
+	BUMP_TIMEOUT_DURATION = time.Second
+
+	PLAYER_BUMP_TIMEOUT = &o.BumpTimeout_s{false, time.Now()}
 }
 
 func spawnInitialAsteroids(n uint) {
@@ -211,9 +215,19 @@ func update() {
 		}
 	}(SANDBOX_SETTINGS.SpawnFrequency)
 
+	// update player bump timeout
+	func() {
+		if PLAYER_BUMP_TIMEOUT.IsInBumpTimeout {
+			if time.Since(PLAYER_BUMP_TIMEOUT.LastBumpTime).Seconds() > BUMP_TIMEOUT_DURATION.Seconds() {
+				// turn off bump timeout
+				PLAYER_BUMP_TIMEOUT.IsInBumpTimeout = false
+			}
+		}
+	}()
+
 	// update player acceleration
 	func() {
-		if INPUT.IsMousePressed {
+		if INPUT.IsMousePressed && !PLAYER_BUMP_TIMEOUT.IsInBumpTimeout {
 			worldMousePosition := frameToWorldPosition(FRAME, INPUT.MousePosition)
 			displacement := PLAYER.Position.Sub(worldMousePosition)
 			acceleration := v.NewPolar(
@@ -311,32 +325,43 @@ func update() {
 				displacement = displacement.Mul(-1)
 				a1.Position = a1.Position.Add(displacement)
 			} else {
-				// check slip
-				segment := o.Segment_s{a1.Position, a2.Position}
-				if segment.GetLength()-a1.Radius-a2.Radius < SLIP_MAX_WIDTH || LIGHT_SPAWN_DURATION == 02471 {
-					if o.AreCircleSegmentIntersecting(segment, PLAYER.GetCircleShape()) {
-						width := SLIP_WIDTH_SCALING / segment.GetLength()
+				// check slip if not bumped
+				if !PLAYER_BUMP_TIMEOUT.IsInBumpTimeout {
+					segment := o.Segment_s{a1.Position, a2.Position}
+					if segment.GetLength()-a1.Radius-a2.Radius < SLIP_MAX_WIDTH || LIGHT_SPAWN_DURATION == 02471 {
+						if o.AreCircleSegmentIntersecting(segment, PLAYER.GetCircleShape()) {
+							width := SLIP_WIDTH_SCALING / segment.GetLength()
 
-						slip := o.Slip_s{
-							segment,
-							width,
-							p.RandomColor(),
-							time.Duration(int64(SLIP_DURATION*100)) * time.Millisecond,
-							time.Now()}
-						SLIPS.PushFront(slip)
+							slip := o.Slip_s{
+								segment,
+								width,
+								p.RandomColor(),
+								time.Duration(int64(SLIP_DURATION*100)) * time.Millisecond,
+								time.Now()}
+							SLIPS.PushFront(slip)
 
-						// regen player health
-						HEALTH_CURRENT = math.Min(HEALTH_CURRENT+HEALTH_REGEN, HEALTH_MAX)
+							// regen player health
+							HEALTH_CURRENT = math.Min(HEALTH_CURRENT+HEALTH_REGEN, HEALTH_MAX)
+						}
 					}
 				}
 			}
 		}
 
-		// collide player
+		// collide player with asteroids
 		a := e1.Value.(*o.Asteroid_s)
 		isIntersecting := o.AreCirclesIntersecting(a.GetCircleShape(), PLAYER.GetCircleShape(), 1)
 		if isIntersecting {
-			HEALTH_CURRENT -= HEALTH_DAMAGE
+
+			func() { // activate bump timeout
+				// be invincible if in bump timeout
+				if !PLAYER_BUMP_TIMEOUT.IsInBumpTimeout {
+					HEALTH_CURRENT -= HEALTH_DAMAGE
+					PLAYER_BUMP_TIMEOUT.IsInBumpTimeout = true
+					PLAYER_BUMP_TIMEOUT.LastBumpTime = time.Now()
+				}
+			}()
+
 			PLAYER.Velocity, _ = resolveCollisionVelocities(PLAYER.Transform_s, a.Transform_s)
 			PLAYER.Velocity.SetMagnitude(SANDBOX_SETTINGS.PlayerBouncebackVelocity)
 			temp := PLAYER.Position.Sub(a.Position)
@@ -406,6 +431,22 @@ func render() {
 		playerCircleShape := o.GetCircleShape(PLAYER.Circle_s, PLAYER.RenderProperties_s)
 		playerCircleShape.SetPosition(framedPlayerPosition.ToSFMLVector2f())
 		playerCircleShape.SetFillColor(p.RandomColor())
+
+		// handle player bump
+		func() {
+			if PLAYER_BUMP_TIMEOUT.IsInBumpTimeout {
+				secondsSinceLastBump := time.Since(PLAYER_BUMP_TIMEOUT.LastBumpTime).Seconds()
+				segment := int(math.Floor(secondsSinceLastBump / BLINK_DURATION))
+				c := p.STOP_SIGN_RED
+				if segment%2 == 0 {
+					c.A = 255
+				} else {
+					c.A = 0
+				}
+				playerCircleShape.SetFillColor(c)
+			}
+		}()
+
 		WINDOW.Draw(playerCircleShape, sf.DefaultRenderStates())
 	}()
 
@@ -469,7 +510,7 @@ func render() {
 	// render health bar
 	func() {
 		healthPercentage := HEALTH_CURRENT / HEALTH_MAX
-		red := p.GREEN
+		red := p.RandomColor()
 		red.A = 200
 		rp := o.RenderProperties_s{
 			0,

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	. "bitbucket.org/kvu787/boost/lib/vector"
-	. "bitbucket.org/kvu787/boost/objects"
+	o "bitbucket.org/kvu787/boost/objects"
 
 	sf "bitbucket.org/kvu787/gosfml2"
 )
@@ -55,10 +55,12 @@ const (
 
 	HEALTH_MAX    float64 = 100
 	HEALTH_REGEN  float64 = 2
-	HEALTH_DECAY  float64 = 1 // points per second
-	HEALTH_DAMAGE float64 = 10
+	HEALTH_DECAY  float64 = 2 // points per second
+	HEALTH_DAMAGE float64 = 40
 
 	ENDLESS bool = false
+
+	BLINK_DURATION float64 = 0.05 // in seconds, meaning color will flip every BLINK_DURATION seconds
 )
 
 // variables that should be immutable
@@ -67,17 +69,19 @@ var (
 	ASTEROID_COLORS           []sf.Color
 	WINDOW_DIAGNOL_LENGTH     float64
 	PLAYER_ACCELERATION_CURVE func(float64) float64
+	BUMP_TIMEOUT_DURATION     time.Duration
 )
 
 var (
 	WINDOW                   *sf.RenderWindow
 	FRAME                    Vector
 	CAMERA_SHIFT             Vector // from center
-	INPUT                    *Input_s
-	PLAYER                   *Player_s
+	INPUT                    *o.Input_s
+	PLAYER                   *o.Player_s
 	ASTEROIDS                *list.List
 	SLIPS                    *list.List
 	CURRENT_BOOST            float64
 	LAST_ASTEROID_SPAWN_TIME time.Time
 	HEALTH_CURRENT           float64
+	PLAYER_BUMP_TIMEOUT      *o.BumpTimeout_s
 )
