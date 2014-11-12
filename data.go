@@ -52,6 +52,13 @@ const (
 	SLIP_DURATION      float64 = 8
 	SLIP_WIDTH_SCALING float64 = 4500 // higher means wider
 	SLIP_MAX_WIDTH     float64 = 300
+
+	HEALTH_MAX    float64 = 100
+	HEALTH_REGEN  float64 = 2
+	HEALTH_DECAY  float64 = 1 // points per second
+	HEALTH_DAMAGE float64 = 10
+
+	ENDLESS bool = false
 )
 
 // variables that should be immutable
@@ -72,4 +79,5 @@ var (
 	SLIPS                    *list.List
 	CURRENT_BOOST            float64
 	LAST_ASTEROID_SPAWN_TIME time.Time
+	HEALTH_CURRENT           float64
 )

@@ -1,1 +1,1 @@
-go build && .\boost.exe data\graphics.json data\player.json data\sandbox.json
+.\boost.exe data\graphics.json data\player.json data\sandbox.json

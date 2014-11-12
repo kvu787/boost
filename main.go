@@ -38,7 +38,6 @@ func main() {
 			panic(err)
 		}
 		json.Unmarshal(bs, &SANDBOX_SETTINGS)
-		fmt.Println(SANDBOX_SETTINGS)
 	}(os.Args[1], os.Args[2], os.Args[3])
 
 	// timing variables
@@ -112,6 +111,8 @@ func setupGameVariables() {
 	PLAYER_ACCELERATION_CURVE = polynomial(2, PLAYER_SETTINGS.ControlRadius, PLAYER_SETTINGS.MaxAcceleration)
 
 	LAST_ASTEROID_SPAWN_TIME = time.Now()
+
+	HEALTH_CURRENT = HEALTH_MAX
 }
 
 func spawnInitialAsteroids(n uint) {
@@ -180,7 +181,6 @@ func input() {
 
 func update() {
 	fmt.Println(ASTEROIDS.Len())
-
 	// spawn asteroid
 	func(spawnFrequency uint) {
 		var spawnDelay float64 = 1.0 / float64(spawnFrequency)
@@ -276,6 +276,14 @@ func update() {
 		asteroid.Transform_s = asteroid.Transform_s.Act(DURATION_PER_FRAME)
 	}
 
+	// update player health
+	func() {
+		if HEALTH_CURRENT < 0 && !ENDLESS {
+			panic("gg")
+		}
+		HEALTH_CURRENT -= HEALTH_DECAY * DURATION_PER_FRAME.Seconds()
+	}()
+
 	// loop through asteroids
 	for e1 := ASTEROIDS.Front(); e1 != nil; e1 = e1.Next() {
 
@@ -316,6 +324,9 @@ func update() {
 							time.Duration(int64(SLIP_DURATION*100)) * time.Millisecond,
 							time.Now()}
 						SLIPS.PushFront(slip)
+
+						// regen player health
+						HEALTH_CURRENT = math.Min(HEALTH_CURRENT+HEALTH_REGEN, HEALTH_MAX)
 					}
 				}
 			}
@@ -325,6 +336,7 @@ func update() {
 		a := e1.Value.(*o.Asteroid_s)
 		isIntersecting := o.AreCirclesIntersecting(a.GetCircleShape(), PLAYER.GetCircleShape(), 1)
 		if isIntersecting {
+			HEALTH_CURRENT -= HEALTH_DAMAGE
 			PLAYER.Velocity, _ = resolveCollisionVelocities(PLAYER.Transform_s, a.Transform_s)
 			PLAYER.Velocity.SetMagnitude(SANDBOX_SETTINGS.PlayerBouncebackVelocity)
 			temp := PLAYER.Position.Sub(a.Position)
@@ -452,6 +464,24 @@ func render() {
 				WINDOW.Draw(r, sf.DefaultRenderStates())
 			}
 		}
+	}()
+
+	// render health bar
+	func() {
+		healthPercentage := HEALTH_CURRENT / HEALTH_MAX
+		red := p.GREEN
+		red.A = 200
+		rp := o.RenderProperties_s{
+			0,
+			0,
+			red,
+			p.WHITE,
+			v.NewUnitVector(),
+		}
+		width := 15.0
+		r := CreateRectangle(v.NewCartesian(healthPercentage*float64(GRAPHICS_SETTINGS.WindowX), width), rp)
+		r.SetPosition(sf.Vector2f{float32(GRAPHICS_SETTINGS.WindowX) / 2.0, float32(width) / 2.0})
+		WINDOW.Draw(r, sf.DefaultRenderStates())
 	}()
 
 	// // render boost bar
