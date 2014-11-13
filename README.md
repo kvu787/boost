@@ -2,8 +2,6 @@ boost
 =====
 
 Top-down asteroid evasion game.
-Don't hit the asteroids.
-Try to slip between them.
 
 Objective
 ---------
@@ -15,8 +13,9 @@ Try to slip between them.
 Controls
 --------
 
-Right-click to apply an acceleration from your mouse position to your player.
-The distance of mouse position to the player is proportional to magnitude of acceleration.
+`Right-click` to accelerate.
+
+`Move your mouse` to change the direction and magnitude of acceleration.
 
 Running the game
 ----------------
