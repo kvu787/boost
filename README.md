@@ -3,6 +3,8 @@ boost
 
 Top-down asteroid evasion game.
 
+![Screen shot of boost](https://raw.githubusercontent.com/kvu787/boost/master/boost.png)
+
 Objective
 ---------
 
