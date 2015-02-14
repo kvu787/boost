@@ -19,8 +19,8 @@ Controls
 
 `Move your mouse` to change the direction and magnitude of acceleration.
 
-Running the game
-----------------
+Installation
+------------
 
 Currently supports Windows 7, 8/8.1 64-bit.
 
